@@ -1,0 +1,192 @@
+// ============================================================================
+// AI-Powered Applicant Tracking System (ATS)
+// Prisma Schema for MySQL
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum UserRole {
+  ADMIN
+  HR
+  CANDIDATE
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  SCREENING
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  INTERVIEWED
+  OFFERED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ============================================================================
+// Models
+// ============================================================================
+
+/// Core user model supporting multi-role authentication (ADMIN, HR, CANDIDATE).
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  role      UserRole @default(CANDIDATE)
+  avatarUrl String?  @map("avatar_url")
+  isActive     Boolean  @default(true) @map("is_active")
+  tokenVersion Int      @default(0) @map("token_version")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  candidateProfile    CandidateProfile?
+  jobPostings         JobPosting[]         @relation("PostedByHR")
+  interviews          Interview[]          @relation("InterviewerRelation")
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+/// Stores password reset tokens with SHA-256 hash and expiry.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+/// Extended profile for users with the CANDIDATE role.
+/// Stores parsed CV data and professional details.
+model CandidateProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  phone           String?
+  dateOfBirth     DateTime? @map("date_of_birth")
+  address         String?   @db.Text
+  summary         String?   @db.Text
+  cvFileUrl       String?   @map("cv_file_url")
+  parsedSkills    Json?     @map("parsed_skills")
+  experienceYears Int?      @map("experience_years")
+  education       String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@map("candidate_profiles")
+}
+
+/// Job postings created by HR users.
+/// Contains the job description used for AI-powered matching.
+model JobPosting {
+  id              String    @id @default(uuid())
+  title           String
+  department      String?
+  location        String?
+  employmentType  String?   @map("employment_type")
+  description     String    @db.LongText
+  requirements    String?   @db.LongText
+  salaryMin       Decimal?  @map("salary_min") @db.Decimal(12, 2)
+  salaryMax       Decimal?  @map("salary_max") @db.Decimal(12, 2)
+  status          JobStatus @default(DRAFT)
+  postedById      String    @map("posted_by_id")
+  applicationDeadline DateTime? @map("application_deadline")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  postedBy     User          @relation("PostedByHR", fields: [postedById], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([status])
+  @@index([postedById])
+  @@map("job_postings")
+}
+
+/// Tracks a candidate's application to a specific job posting.
+/// Stores AI-computed match scores and parsed skills for ranking.
+model Application {
+  id                String            @id @default(uuid())
+  candidateProfileId String           @map("candidate_profile_id")
+  jobPostingId      String            @map("job_posting_id")
+  status            ApplicationStatus @default(SUBMITTED)
+  coverLetter       String?           @map("cover_letter") @db.Text
+  aiMatchScore      Float?            @map("ai_match_score")
+  parsedSkills      Json?             @map("parsed_skills")
+  aiAnalysisSummary String?           @map("ai_analysis_summary") @db.Text
+  appliedAt         DateTime          @default(now()) @map("applied_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  jobPosting       JobPosting       @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  interviews       Interview[]
+
+  @@unique([candidateProfileId, jobPostingId])
+  @@index([status])
+  @@index([aiMatchScore])
+  @@map("applications")
+}
+
+/// Interview scheduling and tracking.
+/// Links an application to an interviewer (HR/Admin user).
+model Interview {
+  id              String          @id @default(uuid())
+  applicationId   String          @map("application_id")
+  interviewerId   String          @map("interviewer_id")
+  scheduledAt     DateTime        @map("scheduled_at")
+  durationMinutes Int             @default(60) @map("duration_minutes")
+  location        String?
+  meetingUrl      String?         @map("meeting_url")
+  status          InterviewStatus @default(SCHEDULED)
+  notes           String?         @db.Text
+  rating          Int?
+  feedback        String?         @db.Text
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interviewer User        @relation("InterviewerRelation", fields: [interviewerId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledAt])
+  @@index([applicationId])
+  @@map("interviews")
+}

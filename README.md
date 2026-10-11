@@ -27,3 +27,38 @@ XD&PTPM/
 │       └── requirements.txt
 └── README.md
 ```
+
+## 🐳 Local Development Database (Docker Compose)
+
+Khởi chạy cơ sở dữ liệu MySQL 8.0.41 bằng Docker cho môi trường lập trình nhóm:
+
+1. **Chuẩn bị cấu hình môi trường Docker**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Khởi động MySQL Container**:
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Kiểm tra trạng thái sẵn sàng (Healthcheck)**:
+   ```bash
+   docker compose ps
+   ```
+
+4. **Cấu hình Backend Core API kết nối CSDL**:
+   ```bash
+   cd backend/core-api
+   cp .env.example .env
+   ```
+   Chuỗi `DATABASE_URL` kết nối tới MySQL container:
+   ```env
+   DATABASE_URL="mysql://ats_app_user:ats_dev_password_change_me@127.0.0.1:3306/ats_database"
+   ```
+
+5. **Dừng container khi nghỉ làm việc**:
+   ```bash
+   docker compose down
+   ```
+   *(Dữ liệu được lưu an toàn trong named volume `ats_mysql_data`, không bị mất khi hạ container)*
