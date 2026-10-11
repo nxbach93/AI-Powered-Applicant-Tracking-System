@@ -1,3 +1,90 @@
-// Placeholder: Authentication middleware
-// Implement JWT verification and role-based access control here.
-export {};
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { UserRole } from '@prisma/client';
+import prisma from '../lib/prisma';
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  firstName?: string;
+  lastName?: string;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthenticatedUser;
+    }
+  }
+}
+
+/**
+ * Middleware xác thực JSON Web Token (JWT)
+ * Kiểm tra header Authorization: Bearer <token>
+ * Giải mã token và xác nhận tài khoản người dùng đang hoạt động
+ */
+export const authenticateJWT = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Yêu cầu token xác thực hợp lệ'
+      }
+    });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const secret = process.env.JWT_SECRET || 'ats-secret-jwt-key-2026-development';
+    const decoded = jwt.verify(token, secret) as { userId: string; email: string; role: UserRole };
+
+    // Kiểm tra người dùng còn tồn tại và đang hoạt động trong database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+        firstName: true,
+        lastName: true
+      }
+    });
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Tài khoản không tồn tại hoặc đã bị vô hiệu hóa'
+        }
+      });
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName
+    };
+
+    next();
+  } catch (error: any) {
+    const isExpired = error.name === 'TokenExpiredError';
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: isExpired
+          ? 'Token đã hết hạn. Vui lòng đăng nhập lại.'
+          : 'Token xác thực không hợp lệ'
+      }
+    });
+  }
+};

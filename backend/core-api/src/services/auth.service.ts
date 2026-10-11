@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import prisma from '../lib/prisma';
 
@@ -8,6 +9,11 @@ export interface RegisterCandidateDto {
   firstName: string;
   lastName: string;
   role?: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
 }
 
 export interface ValidationErrorDetail {
@@ -29,6 +35,15 @@ export class ConflictError extends Error {
   constructor(message: string, code = 'EMAIL_ALREADY_EXISTS') {
     super(message);
     this.name = 'ConflictError';
+    this.code = code;
+  }
+}
+
+export class UnauthorizedError extends Error {
+  code: string;
+  constructor(message: string, code = 'INVALID_CREDENTIALS') {
+    super(message);
+    this.name = 'UnauthorizedError';
     this.code = code;
   }
 }
@@ -118,6 +133,116 @@ export class AuthService {
     });
 
     return newUser;
+  }
+
+  /**
+   * Đăng nhập hệ thống (POST /api/auth/login)
+   */
+  async login(data: LoginDto) {
+    const { email, password } = data;
+    const errors: ValidationErrorDetail[] = [];
+
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      errors.push({ field: 'email', message: 'Vui lòng nhập địa chỉ email' });
+    }
+
+    if (!password || typeof password !== 'string') {
+      errors.push({ field: 'password', message: 'Vui lòng nhập mật khẩu' });
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationError('Dữ liệu đăng nhập không hợp lệ', errors);
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 1. Tìm người dùng theo email
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail }
+    });
+
+    // 2. Kiểm tra nếu không tìm thấy user: thông báo lỗi chung không làm lộ email tồn tại hay không
+    if (!user) {
+      throw new UnauthorizedError('Email hoặc mật khẩu không chính xác', 'INVALID_CREDENTIALS');
+    }
+
+    // 3. Kiểm tra so khớp mật khẩu bằng bcryptjs
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedError('Email hoặc mật khẩu không chính xác', 'INVALID_CREDENTIALS');
+    }
+
+    // 4. Kiểm tra trạng thái tài khoản
+    if (!user.isActive) {
+      throw new UnauthorizedError('Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.', 'ACCOUNT_INACTIVE');
+    }
+
+    // 5. Tạo JWT Token với thời hạn cấu hình từ env (mặc định 7d)
+    const jwtSecret = process.env.JWT_SECRET || 'ats-secret-jwt-key-2026-development';
+    const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      },
+      jwtSecret,
+      { expiresIn: jwtExpiresIn as any }
+    );
+
+    // 6. Trả về thông tin an toàn (loại bỏ password) và token
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        avatarUrl: user.avatarUrl
+      },
+      token
+    };
+  }
+
+  /**
+   * Lấy thông tin tài khoản hiện tại (GET /api/auth/me)
+   */
+  async getMe(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        avatarUrl: true,
+        isActive: true,
+        createdAt: true,
+        candidateProfile: {
+          select: {
+            id: true,
+            phone: true,
+            dateOfBirth: true,
+            address: true,
+            summary: true,
+            cvFileUrl: true,
+            parsedSkills: true,
+            experienceYears: true,
+            education: true
+          }
+        }
+      }
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError('Người dùng không tồn tại hoặc đã bị vô hiệu hóa', 'UNAUTHORIZED');
+    }
+
+    // Đảm bảo không bao giờ trả về password/hash (defense-in-depth)
+    const { password, ...safeUser } = user as any;
+    return safeUser;
   }
 }
 
