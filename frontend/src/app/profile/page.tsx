@@ -27,6 +27,10 @@ function ProfileContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  useEffect(() => {
     if (user) {
       const profile = user.candidateProfile;
       // eslint-disable-next-line react-hooks/set-state-in-effect

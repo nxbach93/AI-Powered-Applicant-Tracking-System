@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { apiRequest, setAuthSession } from '@/lib/api';
-import { User } from '@/lib/auth-context';
+import { apiRequest } from '@/lib/api';
+import { useAuth, User } from '@/lib/auth-context';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const redirectTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -19,6 +21,22 @@ export default function LoginPage() {
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Dọn dẹp timer điều hướng khi unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Nếu người dùng đã đăng nhập từ trước, điều hướng về Trang chủ, tránh hiển thị form đăng nhập
+  useEffect(() => {
+    if (!isAuthLoading && isAuthenticated) {
+      router.replace('/');
+    }
+  }, [isAuthLoading, isAuthenticated, router]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -75,19 +93,17 @@ export default function LoginPage() {
       if (res.success && res.data) {
         const { user, token } = res.data;
 
-        // Lưu phiên đăng nhập an toàn
-        setAuthSession(token, user);
+        // Cập nhật ngay Auth State vào React Context & Session Storage
+        login(token, user);
 
+        // Hiển thị thông báo thành công ngắn
         setSuccessMessage('Đăng nhập thành công! Đang chuyển hướng...');
 
-        // Điều hướng theo vai trò (Role)
-        setTimeout(() => {
-          if (user.role === 'HR' || user.role === 'ADMIN') {
-            router.push('/dashboard');
-          } else {
-            router.push('/');
-          }
-        }, 1000);
+        // Điều hướng nhanh chóng và xóa thông báo khi bắt đầu chuyển trang
+        redirectTimerRef.current = setTimeout(() => {
+          setSuccessMessage(null);
+          router.replace('/');
+        }, 800);
       } else {
         if (res.error?.details && res.error.details.length > 0) {
           const backendFieldErrors: Record<string, string> = {};

@@ -23,7 +23,7 @@ export function RoleGuard({ allowedRoles, children, fallback }: RoleGuardProps) 
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.replace('/auth/login');
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -113,7 +113,7 @@ export function useRequireRole(allowedRoles: UserRole[], redirectTo = '/auth/log
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.push(redirectTo);
+        router.replace(redirectTo);
       }
     }
   }, [isLoading, isAuthenticated, redirectTo, router]);
