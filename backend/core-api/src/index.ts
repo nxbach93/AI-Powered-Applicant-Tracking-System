@@ -1,19 +1,20 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { PrismaClient } from '@prisma/client';
+import prisma from './lib/prisma';
+import authRoutes from './routes/auth.routes';
 
 // Khởi tạo các biến môi trường từ file .env
 dotenv.config();
-
-// Khởi tạo Prisma Client (đây là cách chuẩn xác nhất, không cần truyền pool gì cả)
-const prisma = new PrismaClient();
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Đăng ký các Routes
+app.use('/api/auth', authRoutes);
 
 // API test kết nối Database
 app.get('/api/health', async (req, res) => {
