@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest, setAuthSession } from '@/lib/api';
+import { User } from '@/lib/auth-context';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function LoginPage() {
     setSuccessMessage(null);
 
     try {
-      const res = await apiRequest('/auth/login', {
+      const res = await apiRequest<{ user: User; token: string }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({
           email: formData.email.trim().toLowerCase(),
@@ -99,8 +100,9 @@ export default function LoginPage() {
           setGeneralError(res.error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.');
         }
       }
-    } catch (err: any) {
-      setGeneralError(err.message || 'Lỗi hệ thống khi kết nối đến máy chủ');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi hệ thống khi kết nối đến máy chủ';
+      setGeneralError(msg);
     } finally {
       setIsLoading(false);
     }

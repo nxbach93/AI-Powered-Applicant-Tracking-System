@@ -111,8 +111,9 @@ export default function RegisterPage() {
           setGeneralError(res.error?.message || 'Đăng ký thất bại. Vui lòng thử lại sau.');
         }
       }
-    } catch (err: any) {
-      setGeneralError(err.message || 'Lỗi hệ thống khi kết nối với máy chủ');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi hệ thống khi kết nối với máy chủ';
+      setGeneralError(msg);
     } finally {
       setIsLoading(false);
     }

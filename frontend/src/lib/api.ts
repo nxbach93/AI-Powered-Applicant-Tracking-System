@@ -5,7 +5,7 @@ export interface ApiErrorDetail {
   message: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
@@ -24,7 +24,7 @@ export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
-export function setAuthSession(token: string, user: any): void {
+export function setAuthSession(token: string, user: unknown): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -36,18 +36,18 @@ export function clearAuthSession(): void {
   localStorage.removeItem(USER_KEY);
 }
 
-export function getCurrentUser(): any | null {
+export function getCurrentUser<T = Record<string, unknown>>(): T | null {
   if (typeof window === 'undefined') return null;
   const userStr = localStorage.getItem(USER_KEY);
   if (!userStr) return null;
   try {
-    return JSON.parse(userStr);
+    return JSON.parse(userStr) as T;
   } catch {
     return null;
   }
 }
 
-export async function apiRequest<T = any>(
+export async function apiRequest<T = unknown>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
@@ -74,12 +74,13 @@ export async function apiRequest<T = any>(
 
     const data = await res.json();
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ Backend Core API';
     return {
       success: false,
       error: {
         code: 'NETWORK_ERROR',
-        message: error.message || 'Không thể kết nối đến máy chủ Backend Core API'
+        message: errMessage
       }
     };
   }

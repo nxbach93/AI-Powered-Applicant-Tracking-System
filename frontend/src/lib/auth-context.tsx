@@ -5,6 +5,22 @@ import { apiRequest, getAuthToken, setAuthSession, clearAuthSession, getCurrentU
 
 export type UserRole = 'ADMIN' | 'HR' | 'CANDIDATE';
 
+export interface CandidateProfile {
+  id?: string;
+  userId?: string;
+  phone?: string | null;
+  dateOfBirth?: string | Date | null;
+  address?: string | null;
+  summary?: string | null;
+  experienceYears?: number | null;
+  education?: string | null;
+  resumeUrl?: string | null;
+  portfolioUrl?: string | null;
+  skills?: string[] | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -14,7 +30,7 @@ export interface User {
   avatarUrl?: string | null;
   isActive: boolean;
   createdAt?: string;
-  candidateProfile?: any;
+  candidateProfile?: CandidateProfile | null;
 }
 
 interface AuthContextType {
@@ -58,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // Fallback từ cache nếu mạng lỗi tạm thời
-      const cached = getCurrentUser();
+      const cached = getCurrentUser<User>();
       if (cached) {
         setUser(cached);
         setToken(savedToken);
@@ -73,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshUser();
   }, [refreshUser]);
 

@@ -95,6 +95,7 @@ export function Navbar() {
                   className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all text-left"
                 >
                   {user.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={user.avatarUrl}
                       alt={user.firstName}

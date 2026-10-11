@@ -29,6 +29,7 @@ function ProfileContent() {
   useEffect(() => {
     if (user) {
       const profile = user.candidateProfile;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -103,7 +104,7 @@ function ProfileContent() {
     setSuccessMessage(null);
 
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         avatarUrl: formData.avatarUrl.trim() || null,
@@ -138,8 +139,9 @@ function ProfileContent() {
           setGeneralError(res.error?.message || 'Cập nhật thất bại. Vui lòng thử lại.');
         }
       }
-    } catch (err: any) {
-      setGeneralError(err.message || 'Lỗi hệ thống khi cập nhật hồ sơ');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi hệ thống khi cập nhật hồ sơ';
+      setGeneralError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -525,8 +527,9 @@ function ChangePasswordCard() {
           setPwdGeneralError(res.error?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.');
         }
       }
-    } catch (err: any) {
-      setPwdGeneralError(err.message || 'Lỗi hệ thống khi đổi mật khẩu');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi hệ thống khi đổi mật khẩu';
+      setPwdGeneralError(msg);
     } finally {
       setIsPwdSubmitting(false);
     }

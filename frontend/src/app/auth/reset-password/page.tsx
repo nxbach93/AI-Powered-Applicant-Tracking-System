@@ -108,8 +108,9 @@ function ResetPasswordForm() {
           );
         }
       }
-    } catch (err: any) {
-      setGeneralError(err.message || 'Lỗi hệ thống khi kết nối đến máy chủ');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi hệ thống khi kết nối đến máy chủ';
+      setGeneralError(msg);
     } finally {
       setIsLoading(false);
     }
