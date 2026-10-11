@@ -88,3 +88,36 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
     });
   }
 };
+
+/**
+ * Middleware phân quyền dựa trên vai trò (Role-Based Authorization)
+ * Cho phép khai báo một hoặc nhiều UserRole được phép truy cập
+ * Ví dụ: authorizeRoles(UserRole.HR, UserRole.ADMIN)
+ */
+export const authorizeRoles = (...allowedRoles: UserRole[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    // 1. Kiểm tra xem người dùng đã được xác thực qua authenticateJWT hay chưa
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Yêu cầu token xác thực hợp lệ trước khi kiểm tra quyền'
+        }
+      });
+    }
+
+    // 2. Kiểm tra xem vai trò của user có nằm trong danh sách được phép hay không
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Bạn không có quyền truy cập tài nguyên này'
+        }
+      });
+    }
+
+    next();
+  };
+};
