@@ -16,4 +16,7 @@ router.get('/me', authenticateJWT, (req, res) => authController.getMe(req, res))
 // PUT /api/auth/profile - Cập nhật thông tin tài khoản cá nhân (Yêu cầu JWT)
 router.put('/profile', authenticateJWT, (req, res) => authController.updateProfile(req, res));
 
+// PUT /api/auth/change-password - Đổi mật khẩu tài khoản (Yêu cầu JWT)
+router.put('/change-password', authenticateJWT, (req, res) => authController.changePassword(req, res));
+
 export default router;

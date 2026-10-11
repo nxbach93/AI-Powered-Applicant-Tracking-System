@@ -202,6 +202,62 @@ export class AuthController {
       });
     }
   }
+
+  /**
+   * PUT /api/auth/change-password
+   * Đổi mật khẩu tài khoản người dùng hiện tại
+   */
+  async changePassword(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Yêu cầu token xác thực hợp lệ'
+          }
+        });
+      }
+
+      const result = await authService.changePassword(userId, req.body);
+
+      return res.status(200).json({
+        success: true,
+        message: result.message
+      });
+    } catch (error: any) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: error.message,
+            details: error.details
+          }
+        });
+      }
+
+      if (error instanceof UnauthorizedError) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message
+          }
+        });
+      }
+
+      console.error('Lỗi khi đổi mật khẩu:', error);
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Lỗi hệ thống khi đổi mật khẩu'
+        }
+      });
+    }
+  }
 }
 
 export default new AuthController();

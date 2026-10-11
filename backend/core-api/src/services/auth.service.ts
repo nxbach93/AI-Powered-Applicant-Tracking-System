@@ -377,6 +377,78 @@ export class AuthService {
     // 6. Trả về thông tin người dùng sau cập nhật (đã loại bỏ password)
     return await this.getMe(userId);
   }
+
+  /**
+   * Đổi mật khẩu tài khoản (PUT /api/auth/change-password)
+   */
+  async changePassword(userId: string, data: ChangePasswordDto) {
+    const errors: ValidationErrorDetail[] = [];
+
+    const currentPass = data.currentPassword || data.oldPassword;
+    const newPass = data.newPassword;
+
+    // 1. Kiểm tra trường bắt buộc
+    if (!currentPass || typeof currentPass !== 'string') {
+      errors.push({ field: 'currentPassword', message: 'Vui lòng nhập mật khẩu hiện tại' });
+    }
+
+    if (!newPass || typeof newPass !== 'string') {
+      errors.push({ field: 'newPassword', message: 'Vui lòng nhập mật khẩu mới' });
+    } else if (newPass.length < 6) {
+      errors.push({ field: 'newPassword', message: 'Mật khẩu mới phải có độ dài tối thiểu 6 ký tự' });
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationError('Dữ liệu đổi mật khẩu không hợp lệ', errors);
+    }
+
+    // 2. Tìm tài khoản trong database
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError('Tài khoản không tồn tại hoặc đã bị vô hiệu hóa', 'UNAUTHORIZED');
+    }
+
+    // 3. Kiểm tra mật khẩu hiện tại có khớp với hash trong CSDL không
+    const isOldPasswordCorrect = await bcrypt.compare(currentPass!, user.password);
+    if (!isOldPasswordCorrect) {
+      throw new ValidationError('Mật khẩu hiện tại không chính xác', [
+        { field: 'currentPassword', message: 'Mật khẩu hiện tại không chính xác' }
+      ]);
+    }
+
+    // 4. Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
+    const isSameAsOld = await bcrypt.compare(newPass, user.password);
+    if (isSameAsOld) {
+      throw new ValidationError('Mật khẩu mới không được trùng với mật khẩu hiện tại', [
+        { field: 'newPassword', message: 'Mật khẩu mới không được trùng với mật khẩu hiện tại' }
+      ]);
+    }
+
+    // 5. Băm mật khẩu mới bằng bcryptjs với salt rounds = 10
+    const saltRounds = 10;
+    const hashedNewPassword = await bcrypt.hash(newPass, saltRounds);
+
+    // 6. Cập nhật mật khẩu trong database
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedNewPassword
+      }
+    });
+
+    return {
+      message: 'Đổi mật khẩu thành công'
+    };
+  }
+}
+
+export interface ChangePasswordDto {
+  oldPassword?: string;
+  currentPassword?: string;
+  newPassword: string;
 }
 
 export interface UpdateProfileDto {
