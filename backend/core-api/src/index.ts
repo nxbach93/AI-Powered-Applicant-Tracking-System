@@ -4,6 +4,7 @@ import cors from 'cors';
 import prisma from './lib/prisma';
 import authRoutes from './routes/auth.routes';
 import authController from './controllers/auth.controller';
+import interviewRoutes from './routes/interview.routes';
 import { authenticateJWT } from './middlewares/auth.middleware';
 
 // Khởi tạo các biến môi trường từ file .env
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // Đăng ký các Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/interviews', interviewRoutes);
 
 // Endpoint cập nhật Profile ứng viên theo API_CONTRACT 3.1.4
 app.put('/api/candidates/profile', authenticateJWT, (req, res) => authController.updateProfile(req, res));
