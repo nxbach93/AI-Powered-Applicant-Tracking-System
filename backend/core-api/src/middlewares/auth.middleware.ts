@@ -41,7 +41,12 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
 
   try {
     const secret = process.env.JWT_SECRET || 'ats-secret-jwt-key-2026-development';
-    const decoded = jwt.verify(token, secret) as { userId: string; email: string; role: UserRole };
+    const decoded = jwt.verify(token, secret) as {
+      userId: string;
+      email: string;
+      role: UserRole;
+      tokenVersion?: number;
+    };
 
     // Kiểm tra người dùng còn tồn tại và đang hoạt động trong database
     const user = await prisma.user.findUnique({
@@ -51,6 +56,7 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
         email: true,
         role: true,
         isActive: true,
+        tokenVersion: true,
         firstName: true,
         lastName: true
       }
@@ -62,6 +68,19 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
         error: {
           code: 'UNAUTHORIZED',
           message: 'Tài khoản không tồn tại hoặc đã bị vô hiệu hóa'
+        }
+      });
+    }
+
+    // Kiểm tra tokenVersion để thu hồi các JWT token cũ sau khi mật khẩu được đặt lại
+    const currentTokenVersion = user.tokenVersion ?? 0;
+    const tokenVersionInJwt = decoded.tokenVersion ?? 0;
+    if (tokenVersionInJwt !== currentTokenVersion) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Phiên đăng nhập đã hết hiệu lực do mật khẩu đã thay đổi. Vui lòng đăng nhập lại.'
         }
       });
     }

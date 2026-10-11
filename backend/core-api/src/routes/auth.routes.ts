@@ -19,4 +19,10 @@ router.put('/profile', authenticateJWT, (req, res) => authController.updateProfi
 // PUT /api/auth/change-password - Đổi mật khẩu tài khoản (Yêu cầu JWT)
 router.put('/change-password', authenticateJWT, (req, res) => authController.changePassword(req, res));
 
+// POST /api/auth/forgot-password - Yêu cầu đặt lại mật khẩu qua email (Public)
+router.post('/forgot-password', (req, res) => authController.forgotPassword(req, res));
+
+// POST /api/auth/reset-password - Đặt lại mật khẩu mới bằng token (Public)
+router.post('/reset-password', (req, res) => authController.resetPassword(req, res));
+
 export default router;

@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import prisma from '../lib/prisma';
+import emailService from './email.service';
 
 export interface RegisterCandidateDto {
   email: string;
@@ -48,7 +50,34 @@ export class UnauthorizedError extends Error {
   }
 }
 
+export class RateLimitError extends Error {
+  code: string;
+  constructor(message: string, code = 'TOO_MANY_REQUESTS') {
+    super(message);
+    this.name = 'RateLimitError';
+    this.code = code;
+  }
+}
+
 export class AuthService {
+  // Bộ nhớ đệm giới hạn tần suất gửi email reset password (in-memory rate limiter)
+  private resetEmailRequestLog = new Map<string, number[]>();
+
+  private checkRateLimit(email: string) {
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000; // Khung thời gian 15 phút
+    const maxRequests = 3; // Tối đa 3 yêu cầu trong 15 phút
+
+    const timestamps = this.resetEmailRequestLog.get(email) || [];
+    const validTimestamps = timestamps.filter(ts => now - ts < windowMs);
+
+    if (validTimestamps.length >= maxRequests) {
+      throw new RateLimitError('Bạn đã gửi yêu cầu quá nhiều lần. Vui lòng thử lại sau 15 phút.');
+    }
+
+    validTimestamps.push(now);
+    this.resetEmailRequestLog.set(email, validTimestamps);
+  }
   /**
    * Đăng ký tài khoản cho ứng viên (CANDIDATE)
    */
@@ -185,7 +214,8 @@ export class AuthService {
       {
         userId: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        tokenVersion: user.tokenVersion ?? 0
       },
       jwtSecret,
       { expiresIn: jwtExpiresIn as any }
@@ -443,6 +473,159 @@ export class AuthService {
       message: 'Đổi mật khẩu thành công'
     };
   }
+
+  /**
+   * Yêu cầu đặt lại mật khẩu qua email (POST /api/auth/forgot-password)
+   */
+  async forgotPassword(data: ForgotPasswordDto) {
+    const { email } = data;
+    const errors: ValidationErrorDetail[] = [];
+
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      errors.push({ field: 'email', message: 'Vui lòng nhập địa chỉ email' });
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        errors.push({ field: 'email', message: 'Định dạng email không hợp lệ' });
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationError('Dữ liệu yêu cầu không hợp lệ', errors);
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Giới hạn tần suất yêu cầu chống spam
+    this.checkRateLimit(normalizedEmail);
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail }
+    });
+
+    // Luôn trả thông điệp trung lập, không tiết lộ email có tồn tại hay không
+    const neutralMessage = 'Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi đến hộp thư của bạn.';
+
+    if (!user || !user.isActive) {
+      return { message: neutralMessage };
+    }
+
+    // Sinh reset token ngẫu nhiên bảo mật cao bằng crypto.randomBytes (32 bytes = 64 hex chars)
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const expiresMinutes = Number(process.env.PASSWORD_RESET_TOKEN_EXPIRES_MINUTES) || 15;
+    const expiresAt = new Date(Date.now() + expiresMinutes * 60 * 1000);
+
+    // Lưu token hash vào bảng password_reset_tokens
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt
+      }
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/auth/reset-password?token=${rawToken}`;
+
+    // Gửi email chứa đường dẫn đặt lại mật khẩu
+    // Nếu gửi email thất bại, ném lỗi để không đánh dấu thành công sai sự thật
+    await emailService.sendPasswordResetEmail(user.email, resetUrl, expiresMinutes);
+
+    return {
+      message: neutralMessage
+    };
+  }
+
+  /**
+   * Đặt lại mật khẩu mới bằng token (POST /api/auth/reset-password)
+   */
+  async resetPassword(data: ResetPasswordDto) {
+    const { token, newPassword } = data;
+    const errors: ValidationErrorDetail[] = [];
+
+    if (!token || typeof token !== 'string' || !token.trim()) {
+      errors.push({ field: 'token', message: 'Token đặt lại mật khẩu là bắt buộc' });
+    }
+
+    if (!newPassword || typeof newPassword !== 'string') {
+      errors.push({ field: 'newPassword', message: 'Vui lòng nhập mật khẩu mới' });
+    } else if (newPassword.length < 6) {
+      errors.push({ field: 'newPassword', message: 'Mật khẩu mới phải có tối thiểu 6 ký tự' });
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationError('Dữ liệu đặt lại mật khẩu không hợp lệ', errors);
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+    const resetTokenRecord = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      include: { user: true }
+    });
+
+    if (!resetTokenRecord) {
+      throw new ValidationError('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn');
+    }
+
+    if (resetTokenRecord.usedAt !== null) {
+      throw new ValidationError('Liên kết đặt lại mật khẩu này đã được sử dụng');
+    }
+
+    if (resetTokenRecord.expiresAt.getTime() < Date.now()) {
+      throw new ValidationError('Liên kết đặt lại mật khẩu đã hết hạn. Vui lòng gửi yêu cầu mới.');
+    }
+
+    if (!resetTokenRecord.user || !resetTokenRecord.user.isActive) {
+      throw new UnauthorizedError('Tài khoản không tồn tại hoặc đã bị vô hiệu hóa', 'UNAUTHORIZED');
+    }
+
+    // Xử lý nguyên tử transaction để tránh race condition khi 2 request dùng cùng token
+    await prisma.$transaction(async (tx) => {
+      const updateTokenResult = await tx.passwordResetToken.updateMany({
+        where: {
+          id: resetTokenRecord.id,
+          usedAt: null,
+          expiresAt: { gt: new Date() }
+        },
+        data: {
+          usedAt: new Date()
+        }
+      });
+
+      if (updateTokenResult.count === 0) {
+        throw new ValidationError('Liên kết đặt lại mật khẩu này đã được sử dụng hoặc đã hết hạn');
+      }
+
+      // Hash mật khẩu mới bằng bcryptjs salt rounds = 10
+      const saltRounds = 10;
+      const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // Cập nhật mật khẩu và tăng tokenVersion để vô hiệu hóa toàn bộ JWT cũ
+      await tx.user.update({
+        where: { id: resetTokenRecord.userId },
+        data: {
+          password: hashedNewPassword,
+          tokenVersion: { increment: 1 }
+        }
+      });
+    });
+
+    return {
+      message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.'
+    };
+  }
+}
+
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  token: string;
+  newPassword: string;
 }
 
 export interface ChangePasswordDto {
