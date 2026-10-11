@@ -143,6 +143,65 @@ export class AuthController {
       });
     }
   }
+
+  /**
+   * PUT /api/auth/profile
+   * Cập nhật thông tin tài khoản người dùng hiện tại
+   */
+  async updateProfile(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Yêu cầu token xác thực hợp lệ'
+          }
+        });
+      }
+
+      const updatedUser = await authService.updateProfile(userId, req.body);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Cập nhật thông tin tài khoản thành công',
+        data: {
+          user: updatedUser
+        }
+      });
+    } catch (error: any) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: error.message,
+            details: error.details
+          }
+        });
+      }
+
+      if (error instanceof UnauthorizedError) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message
+          }
+        });
+      }
+
+      console.error('Lỗi khi cập nhật thông tin người dùng:', error);
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Lỗi hệ thống khi cập nhật thông tin tài khoản'
+        }
+      });
+    }
+  }
 }
 
 export default new AuthController();

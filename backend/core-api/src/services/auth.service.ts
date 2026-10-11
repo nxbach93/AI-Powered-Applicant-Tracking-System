@@ -244,6 +244,152 @@ export class AuthService {
     const { password, ...safeUser } = user as any;
     return safeUser;
   }
+
+  /**
+   * Cập nhật thông tin tài khoản cá nhân (PUT /api/auth/profile)
+   */
+  async updateProfile(userId: string, data: UpdateProfileDto) {
+    const errors: ValidationErrorDetail[] = [];
+
+    // 1. Kiểm tra tài khoản tồn tại và đang hoạt động
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { candidateProfile: true }
+    });
+
+    if (!existingUser || !existingUser.isActive) {
+      throw new UnauthorizedError('Tài khoản không tồn tại hoặc đã bị vô hiệu hóa', 'UNAUTHORIZED');
+    }
+
+    // 2. Validate và lọc các trường User được phép cập nhật
+    const userUpdateData: { firstName?: string; lastName?: string; avatarUrl?: string | null } = {};
+
+    if (data.firstName !== undefined) {
+      if (typeof data.firstName !== 'string' || !data.firstName.trim()) {
+        errors.push({ field: 'firstName', message: 'Họ và tên đệm không được để trống' });
+      } else {
+        userUpdateData.firstName = data.firstName.trim();
+      }
+    }
+
+    if (data.lastName !== undefined) {
+      if (typeof data.lastName !== 'string' || !data.lastName.trim()) {
+        errors.push({ field: 'lastName', message: 'Tên không được để trống' });
+      } else {
+        userUpdateData.lastName = data.lastName.trim();
+      }
+    }
+
+    if (data.avatarUrl !== undefined && data.avatarUrl !== null && data.avatarUrl !== '') {
+      if (typeof data.avatarUrl !== 'string') {
+        errors.push({ field: 'avatarUrl', message: 'Định dạng đường dẫn ảnh đại diện không hợp lệ' });
+      } else {
+        const urlRegex = /^(https?:\/\/|\/uploads\/)/i;
+        if (!urlRegex.test(data.avatarUrl.trim())) {
+          errors.push({
+            field: 'avatarUrl',
+            message: 'Ảnh đại diện phải là URL hợp lệ (bắt đầu bằng http://, https:// hoặc /uploads/)'
+          });
+        } else {
+          userUpdateData.avatarUrl = data.avatarUrl.trim();
+        }
+      }
+    } else if (data.avatarUrl === null || data.avatarUrl === '') {
+      userUpdateData.avatarUrl = null;
+    }
+
+    // 3. Validate và lọc các trường CandidateProfile nếu có
+    const profileUpdateData: Record<string, any> = {};
+
+    if (data.phone !== undefined) {
+      if (data.phone === null || (typeof data.phone === 'string' && data.phone.trim() === '')) {
+        profileUpdateData.phone = null;
+      } else if (typeof data.phone === 'string') {
+        const phoneRegex = /^[0-9]{10,11}$/;
+        if (!phoneRegex.test(data.phone.trim())) {
+          errors.push({ field: 'phone', message: 'Số điện thoại phải gồm 10 đến 11 chữ số' });
+        } else {
+          profileUpdateData.phone = data.phone.trim();
+        }
+      }
+    }
+
+    if (data.dateOfBirth !== undefined) {
+      if (!data.dateOfBirth) {
+        profileUpdateData.dateOfBirth = null;
+      } else {
+        const dob = new Date(data.dateOfBirth);
+        if (isNaN(dob.getTime())) {
+          errors.push({ field: 'dateOfBirth', message: 'Ngày sinh không đúng định dạng ngày tháng' });
+        } else {
+          profileUpdateData.dateOfBirth = dob;
+        }
+      }
+    }
+
+    if (data.address !== undefined) {
+      profileUpdateData.address = typeof data.address === 'string' ? data.address.trim() : null;
+    }
+
+    if (data.summary !== undefined) {
+      profileUpdateData.summary = typeof data.summary === 'string' ? data.summary.trim() : null;
+    }
+
+    if (data.education !== undefined) {
+      profileUpdateData.education = typeof data.education === 'string' ? data.education.trim() : null;
+    }
+
+    if (data.experienceYears !== undefined && data.experienceYears !== null) {
+      const exp = Number(data.experienceYears);
+      if (isNaN(exp) || exp < 0) {
+        errors.push({ field: 'experienceYears', message: 'Số năm kinh nghiệm phải là số không âm' });
+      } else {
+        profileUpdateData.experienceYears = Math.floor(exp);
+      }
+    } else if (data.experienceYears === null) {
+      profileUpdateData.experienceYears = null;
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationError('Dữ liệu cập nhật hồ sơ không hợp lệ', errors);
+    }
+
+    // 4. Cập nhật User nếu có thay đổi
+    if (Object.keys(userUpdateData).length > 0) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: userUpdateData
+      });
+    }
+
+    // 5. Cập nhật CandidateProfile nếu là CANDIDATE và có trường profile được truyền
+    if (existingUser.role === UserRole.CANDIDATE && Object.keys(profileUpdateData).length > 0) {
+      await prisma.candidateProfile.upsert({
+        where: { userId },
+        create: {
+          userId,
+          ...profileUpdateData
+        },
+        update: profileUpdateData
+      });
+    }
+
+    // 6. Trả về thông tin người dùng sau cập nhật (đã loại bỏ password)
+    return await this.getMe(userId);
+  }
+}
+
+export interface UpdateProfileDto {
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string | null;
+  phone?: string | null;
+  dateOfBirth?: string | Date | null;
+  address?: string | null;
+  summary?: string | null;
+  experienceYears?: number | null;
+  education?: string | null;
+  [key: string]: any;
 }
 
 export default new AuthService();
