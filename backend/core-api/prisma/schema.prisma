@@ -60,16 +60,34 @@ model User {
   lastName  String   @map("last_name")
   role      UserRole @default(CANDIDATE)
   avatarUrl String?  @map("avatar_url")
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  isActive     Boolean  @default(true) @map("is_active")
+  tokenVersion Int      @default(0) @map("token_version")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  candidateProfile CandidateProfile?
-  jobPostings      JobPosting[]       @relation("PostedByHR")
-  interviews       Interview[]        @relation("InterviewerRelation")
+  candidateProfile    CandidateProfile?
+  jobPostings         JobPosting[]         @relation("PostedByHR")
+  interviews          Interview[]          @relation("InterviewerRelation")
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+/// Stores password reset tokens with SHA-256 hash and expiry.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 /// Extended profile for users with the CANDIDATE role.
