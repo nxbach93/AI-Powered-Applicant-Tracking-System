@@ -1,20 +1,57 @@
 # ============================================================================
 # AI Service - Python Dependencies
 # ============================================================================
+#
+# HƯỚNG DẪN CÀI ĐẶT (Windows với MSYS2 Python 3.11):
+#
+#   1. Tạo venv:
+#      & "C:\msys64\ucrt64\bin\python.exe" -m venv venv
+#
+#   2. Cài certifi để fix SSL certificate cho MSYS2:
+#      $env:PYTHONHTTPSVERIFY="0"
+#      .\venv\bin\python.exe -m pip install certifi \
+#        --trusted-host pypi.org --trusted-host files.pythonhosted.org
+#
+#   3. Cài core packages (không cần build tool):
+#      $env:SSL_CERT_FILE = (.\venv\bin\python.exe -c "import certifi; print(certifi.where())")
+#      .\venv\bin\python.exe -m pip install -r requirements.txt \
+#        --trusted-host pypi.org --trusted-host files.pythonhosted.org
+#
+#   4. Tải model ngôn ngữ spaCy (nếu cài được spaCy):
+#      .\venv\bin\python.exe -m spacy download en_core_web_sm
+#
+# ============================================================================
 
-# Web Framework
+# --- Core Web Framework ---
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 
-# NLP & AI
-spacy==3.7.6
-sentence-transformers==3.1.1
-
-# CV Parsing
+# --- CV Parsing (Text Extraction) ---
+# Đọc file PDF (text-based, không phải scanned/image PDF)
 pdfplumber==0.11.4
+# Đọc file DOCX (Microsoft Word)
 python-docx==1.1.2
 
-# Utilities
+# --- Utilities ---
 python-multipart==0.0.12
 python-dotenv==1.0.1
 pydantic==2.9.2
+certifi==2026.7.22
+
+# ============================================================================
+# NLP & AI Packages (Optional — Cài sau khi core packages hoạt động ổn định)
+# ============================================================================
+#
+# CẢNH BÁO (Windows MSYS2): spaCy và sentence-transformers cần build
+# từ source vì không có pre-built wheel cho MSYS2 Python.
+# Yêu cầu: CMake, Ninja/Make, MSVC Build Tools hoặc MinGW.
+#
+# Nếu môi trường hỗ trợ (Python từ python.org, hoặc Linux/macOS):
+#   pip install spacy==3.7.6 sentence-transformers==3.1.1
+#   python -m spacy download en_core_web_sm
+#
+# Hiện tại: Skills extraction dùng regex + dictionary (app/utils/skill_dictionary.py)
+# thay thế spaCy NER cho tương thích đa môi trường.
+#
+# spacy==3.7.6
+# sentence-transformers==3.1.1
