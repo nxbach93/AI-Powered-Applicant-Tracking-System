@@ -7,7 +7,7 @@ import { JobPosting } from '@/types/job';
 import jobApi from '@/lib/services/job-api';
 import { JobStatusBadge } from '@/components/jobs/JobStatusBadge';
 
-export default function JobDetailPage() {
+function JobDetailContent() {
   const params = useParams();
   const router = useRouter();
   const id = String(params.id);
@@ -392,5 +392,20 @@ export default function JobDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function JobDetailPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50/70 p-12 text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs text-slate-500 font-medium">Đang tải chi tiết việc làm...</p>
+        </div>
+      }
+    >
+      <JobDetailContent />
+    </React.Suspense>
   );
 }

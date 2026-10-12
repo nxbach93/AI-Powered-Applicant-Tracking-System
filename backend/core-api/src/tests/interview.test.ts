@@ -162,7 +162,7 @@ async function runTests() {
 
     const cancelled = await interviewService.cancelInterview('interview-uuid-999', 'Ứng viên bận việc đột xuất');
 
-    if (cancelled.status === InterviewStatus.CANCELLED && cancelled.notes.includes('Ứng viên bận việc đột xuất')) {
+    if (cancelled.status === InterviewStatus.CANCELLED && cancelled.notes?.includes('Ứng viên bận việc đột xuất')) {
       console.log(green('TC4: Hủy lịch phỏng vấn thành công và lưu lý do hủy'));
       passed++;
     } else {

@@ -7,7 +7,7 @@ import { JobPosting, CreateJobDto } from '@/types/job';
 import jobApi from '@/lib/services/job-api';
 import { JobForm } from '@/components/jobs/JobForm';
 
-export default function EditJobPage() {
+function EditJobContent() {
   const params = useParams();
   const router = useRouter();
   const id = String(params.id);
@@ -118,5 +118,20 @@ export default function EditJobPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function EditJobPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50/70 p-12 text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs text-slate-500 font-medium">Đang tải...</p>
+        </div>
+      }
+    >
+      <EditJobContent />
+    </React.Suspense>
   );
 }
