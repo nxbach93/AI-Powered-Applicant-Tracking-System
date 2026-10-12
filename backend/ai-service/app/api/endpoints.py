@@ -4,14 +4,17 @@ Cung cấp các API xử lý bóc tách thông tin CV và so khớp ngữ nghĩa
 Tuân thủ API Contract (docs/API_CONTRACT.md).
 """
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, File, Form, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from app.schemas.cv_schema import (
     ContactInfo,
+    CVDataInput,
     ErrorResponse,
+    JDDataInput,
     MatchCVRequest,
     MatchCVResponse,
+    MatchWeightsInput,
     ParseCVResponse,
 )
 from app.services.cv_parser import parse_cv_text
@@ -174,5 +177,90 @@ async def match_cv(request: MatchCVRequest):
                 },
             },
         )
+
+
+# ============================================================================
+# POST /api/v1/analyze-cv — Tích hợp Trực tiếp Core-API (CV File + JD Text)
+# ============================================================================
+@router.post(
+    "/analyze-cv",
+    summary="Phân tích & So khớp CV toàn diện từ tệp tải lên (Dùng cho Core API)",
+    description="Nhận tệp CV vật lý cùng nội dung JD để bóc tách và tính điểm Match Score tự động.",
+)
+async def analyze_cv(
+    cv_file: UploadFile = File(..., description="Tệp CV (.pdf hoặc .docx)"),
+    jd_text: str = Form(..., description="Nội dung JD tổng hợp"),
+    skill_weight: float = Form(0.5, description="Trọng số kỹ năng"),
+    exp_weight: float = Form(0.3, description="Trọng số kinh nghiệm"),
+    semantic_weight: float = Form(0.2, description="Trọng số ngữ nghĩa"),
+):
+    try:
+        filename = cv_file.filename or "unknown"
+        file_bytes = await cv_file.read()
+        if not file_bytes:
+            raise EmptyFileError("Tệp CV tải lên rỗng (0 bytes).")
+
+        extracted_text = extract_text(filename=filename, file_bytes=file_bytes)
+        parsed_data = parse_cv_text(extracted_text)
+
+        jd_lines = [line.strip() for line in jd_text.strip().splitlines() if line.strip()]
+        jd_title = jd_lines[0] if jd_lines else "Vị trí tuyển dụng"
+
+        jd_input = JDDataInput(
+            title=jd_title,
+            description=jd_text,
+            requirements="",
+            required_skills=[],
+            min_experience_years=0,
+        )
+        cv_input = CVDataInput(
+            raw_text=extracted_text,
+            skills=parsed_data.get("parsed_skills", []),
+            experience_years=parsed_data.get("experience_years", 0),
+        )
+        weights = MatchWeightsInput(
+            skill_weight=skill_weight,
+            exp_weight=exp_weight,
+            semantic_weight=semantic_weight,
+        )
+
+        match_result = match_cv_with_jd(MatchCVRequest(cv_data=cv_input, jd_data=jd_input, weights=weights))
+
+        return {
+            "success": True,
+            "match_score": match_result.match_score,
+            "parsed_skills": match_result.parsed_skills,
+            "summary": match_result.summary,
+            "score_breakdown": {
+                "skill_score": match_result.score_breakdown.skill_score,
+                "experience_score": match_result.score_breakdown.experience_score,
+                "semantic_score": match_result.score_breakdown.semantic_score,
+            },
+            "matched_skills": match_result.matched_skills,
+            "missing_skills": match_result.missing_skills,
+        }
+    except TextExtractionError as exc:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error": {
+                    "code": exc.code,
+                    "message": exc.message,
+                },
+            },
+        )
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "success": False,
+                "error": {
+                    "code": "ANALYSIS_ERROR",
+                    "message": f"Lỗi phân tích CV: {str(exc)}",
+                },
+            },
+        )
+
 
 

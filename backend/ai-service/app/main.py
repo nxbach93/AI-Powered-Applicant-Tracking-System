@@ -77,34 +77,34 @@ async def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Load ML/NLP models on startup."""
-    print("🚀 ATS AI Service started successfully")
-    print("📄 API Docs available at http://localhost:8000/docs")
+    print("[AI-Service] ATS AI Service started successfully")
+    print("[AI-Service] API Docs available at http://localhost:8000/docs")
 
-    # Khởi tạo mô hình spaCy NLP nếu có sẵn
+    # Khoi tao mo hinh spaCy NLP neu co san
     try:
         nlp = get_nlp()
         if nlp is not None:
-            print("🧠 spaCy NER model 'en_core_web_sm' loaded successfully.")
+            print("[AI-Service] spaCy NER model 'en_core_web_sm' loaded successfully.")
         else:
-            print("⚡ spaCy model not installed or unavailable. Using regex + rule-based NLP fallback.")
+            print("[AI-Service] spaCy model not installed or unavailable. Using regex + rule-based NLP fallback.")
     except Exception as exc:
-        print(f"⚠️ NLP model pre-load warning: {exc}")
+        print(f"[AI-Service] NLP model pre-load warning: {exc}")
 
-    # Khởi tạo mô hình Sentence-Transformers nếu có sẵn
+    # Khoi tao mo hinh Sentence-Transformers neu co san
     try:
         from app.services.matching_engine import get_transformer_model
         t_model = get_transformer_model()
         if t_model is not None:
-            print("🤖 Sentence-Transformers model 'all-MiniLM-L6-v2' loaded successfully.")
+            print("[AI-Service] Sentence-Transformers model 'all-MiniLM-L6-v2' loaded successfully.")
         else:
-            print("⚡ Sentence-Transformers unavailable. Using TF-IDF / Cosine Similarity fallback.")
+            print("[AI-Service] Sentence-Transformers unavailable. Using TF-IDF / Cosine Similarity fallback.")
     except Exception as exc:
-        print(f"⚠️ Transformer model pre-load warning: {exc}")
+        print(f"[AI-Service] Transformer model pre-load warning: {exc}")
 
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup resources on shutdown."""
-    print("🛑 ATS AI Service shutting down...")
+    print("[AI-Service] ATS AI Service shutting down...")
 
