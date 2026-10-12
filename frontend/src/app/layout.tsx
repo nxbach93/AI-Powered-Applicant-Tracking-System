@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Suspense } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Navbar } from "@/components/navbar";
 
@@ -31,7 +32,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-slate-50">
         <AuthProvider>
-          <Navbar />
+          <Suspense fallback={<header className="h-16 bg-white border-b border-slate-200" />}>
+            <Navbar />
+          </Suspense>
           <div className="flex-1">{children}</div>
         </AuthProvider>
       </body>

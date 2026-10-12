@@ -1,9 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import prisma from './lib/prisma';
 import authRoutes from './routes/auth.routes';
 import jobRoutes from './routes/job.routes';
+import applicationRoutes from './routes/application.routes';
 import authController from './controllers/auth.controller';
 import { authenticateJWT } from './middlewares/auth.middleware';
 
@@ -13,9 +15,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Phục vụ tệp tĩnh tải lên (CV, Avatar)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // Đăng ký các Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Endpoint cập nhật Profile ứng viên theo API_CONTRACT 3.1.4
 app.put('/api/candidates/profile', authenticateJWT, (req, res) => authController.updateProfile(req, res));
