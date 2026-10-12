@@ -68,6 +68,28 @@ export function Navbar() {
               >
                 Trang chủ
               </Link>
+              <Link
+                href="/jobs"
+                className={`px-3 py-2 rounded-lg transition-colors ${
+                  pathname.startsWith('/jobs')
+                    ? 'text-blue-600 bg-blue-50/70 font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                Việc làm
+              </Link>
+              {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
+                <Link
+                  href="/dashboard/jobs"
+                  className={`px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/dashboard/jobs')
+                      ? 'text-blue-600 bg-blue-50/70 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Quản lý tuyển dụng
+                </Link>
+              )}
               {isAuthenticated && (
                 <Link
                   href="/profile"
@@ -195,6 +217,28 @@ export function Navbar() {
           >
             Trang chủ
           </Link>
+          <Link
+            href="/jobs"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+              pathname.startsWith('/jobs') ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            Việc làm
+          </Link>
+          {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
+            <Link
+              href="/dashboard/jobs"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+                pathname.startsWith('/dashboard/jobs')
+                  ? 'text-blue-600 bg-blue-50 font-semibold'
+                  : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Quản lý tuyển dụng
+            </Link>
+          )}
           {isAuthenticated && (
             <Link
               href="/profile"
