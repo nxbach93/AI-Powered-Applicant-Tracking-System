@@ -80,6 +80,30 @@ export function Navbar() {
                   Hồ sơ cá nhân
                 </Link>
               )}
+              {isAuthenticated && user?.role === 'CANDIDATE' && (
+                <Link
+                  href="/candidate/applications"
+                  className={`px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/candidate/applications')
+                      ? 'text-blue-600 bg-blue-50/70 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Đơn ứng tuyển
+                </Link>
+              )}
+              {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
+                <Link
+                  href="/hr/applications"
+                  className={`px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/hr/applications')
+                      ? 'text-indigo-600 bg-indigo-50/70 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Quản lý Ứng viên
+                </Link>
+              )}
             </nav>
           </div>
 
@@ -206,6 +230,34 @@ export function Navbar() {
               }`}
             >
               Hồ sơ cá nhân
+            </Link>
+          )}
+
+          {isAuthenticated && user?.role === 'CANDIDATE' && (
+            <Link
+              href="/candidate/applications"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+                pathname.startsWith('/candidate/applications')
+                  ? 'text-blue-600 bg-blue-50 font-semibold'
+                  : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Đơn ứng tuyển của tôi
+            </Link>
+          )}
+
+          {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
+            <Link
+              href="/hr/applications"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+                pathname.startsWith('/hr/applications')
+                  ? 'text-indigo-600 bg-indigo-50 font-semibold'
+                  : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Quản lý Ứng viên & Đơn tuyển
             </Link>
           )}
 

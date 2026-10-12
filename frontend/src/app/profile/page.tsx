@@ -5,9 +5,18 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { apiRequest } from '@/lib/api';
+import { CvUploadCard } from '@/components/candidate/cv-upload-card';
+import { getMyCvApi, CvInfo } from '@/lib/application-api';
 
 function ProfileContent() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, role } = useAuth();
+  const [cvInfo, setCvInfo] = useState<CvInfo | null>(null);
+
+  useEffect(() => {
+    if (role === 'CANDIDATE') {
+      getMyCvApi().then(setCvInfo).catch(() => setCvInfo({ hasCv: false }));
+    }
+  }, [role]);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -431,6 +440,38 @@ function ProfileContent() {
           </div>
         </form>
       </div>
+
+      {/* Hồ sơ CV — chỉ hiển thị với CANDIDATE */}
+      {role === 'CANDIDATE' && (
+        <div className="mt-8 space-y-4">
+          <CvUploadCard
+            cvInfo={cvInfo}
+            onUploadSuccess={(newInfo) => setCvInfo(newInfo)}
+            onDeleteSuccess={() => setCvInfo({ hasCv: false })}
+          />
+          {/* Shortcut đến trang đơn ứng tuyển */}
+          <Link
+            href="/candidate/applications"
+            className="flex items-center justify-between px-5 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-md shadow-blue-500/20 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold">Lịch sử ứng tuyển</p>
+                <p className="text-xs text-blue-200">Theo dõi trạng thái tất cả đơn ứng tuyển của bạn</p>
+              </div>
+            </div>
+            <svg className="w-5 h-5 text-blue-200 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      )}
 
       {/* Khối Đổi Mật Khẩu */}
       <ChangePasswordCard />
