@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import jobRoutes from './routes/job.routes';
 import applicationRoutes from './routes/application.routes';
 import authController from './controllers/auth.controller';
+import interviewRoutes from './routes/interview.routes';
 import { authenticateJWT } from './middlewares/auth.middleware';
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/interviews', interviewRoutes);
 
 // Endpoint cập nhật Profile ứng viên theo API_CONTRACT 3.1.4
 app.put('/api/candidates/profile', authenticateJWT, (req, res) => authController.updateProfile(req, res));

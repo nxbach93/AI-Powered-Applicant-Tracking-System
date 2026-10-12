@@ -41,6 +41,9 @@ export function Navbar() {
     }
   };
 
+  const isHrOrAdmin = user?.role === 'HR' || user?.role === 'ADMIN';
+  const isCandidate = user?.role === 'CANDIDATE';
+
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm shadow-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -57,7 +60,7 @@ export function Navbar() {
             </Link>
 
             {/* Menu điều hướng chính trên Desktop */}
-            <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
+            <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
               <Link
                 href="/"
                 className={`px-3 py-2 rounded-lg transition-colors ${
@@ -78,16 +81,52 @@ export function Navbar() {
               >
                 Việc làm
               </Link>
-              {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
+              {isAuthenticated && isHrOrAdmin && (
+                <>
+                  <Link
+                    href="/dashboard/jobs"
+                    className={`px-3 py-2 rounded-lg transition-colors ${
+                      pathname.startsWith('/dashboard/jobs')
+                        ? 'text-blue-600 bg-blue-50/70 font-semibold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    Quản lý tuyển dụng
+                  </Link>
+                  <Link
+                    href="/hr/interviews"
+                    className={`px-3 py-2 rounded-lg transition-colors ${
+                      pathname === '/hr/interviews'
+                        ? 'text-blue-600 bg-blue-50/70 font-semibold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    Lịch phỏng vấn
+                  </Link>
+                  <Link
+                    href="/hr/workflow"
+                    className={`px-3 py-2 rounded-lg transition-colors ${
+                      pathname === '/hr/workflow'
+                        ? 'text-blue-600 bg-blue-50/70 font-semibold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    Tiến trình tuyển dụng
+                  </Link>
+                </>
+              )}
+
+              {/* Điều hướng dành cho Candidate */}
+              {isAuthenticated && isCandidate && (
                 <Link
-                  href="/dashboard/jobs"
+                  href="/candidate/interviews"
                   className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname.startsWith('/dashboard/jobs')
+                    pathname === '/candidate/interviews'
                       ? 'text-blue-600 bg-blue-50/70 font-semibold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  Quản lý tuyển dụng
+                  Lịch phỏng vấn
                 </Link>
               )}
               {isAuthenticated && (
@@ -250,17 +289,49 @@ export function Navbar() {
           >
             Việc làm
           </Link>
-          {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
+          {isAuthenticated && isHrOrAdmin && (
+            <>
+              <Link
+                href="/dashboard/jobs"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+                  pathname.startsWith('/dashboard/jobs')
+                    ? 'text-blue-600 bg-blue-50 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                Quản lý tuyển dụng
+              </Link>
+              <Link
+                href="/hr/interviews"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+                  pathname === '/hr/interviews' ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                Lịch phỏng vấn
+              </Link>
+              <Link
+                href="/hr/workflow"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+                  pathname === '/hr/workflow' ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                Tiến trình tuyển dụng
+              </Link>
+            </>
+          )}
+
+          {isAuthenticated && isCandidate && (
             <Link
-              href="/dashboard/jobs"
+              href="/candidate/interviews"
               onClick={() => setIsMobileMenuOpen(false)}
               className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                pathname.startsWith('/dashboard/jobs')
-                  ? 'text-blue-600 bg-blue-50 font-semibold'
-                  : 'text-slate-700 hover:bg-slate-50'
+                pathname === '/candidate/interviews' ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              Quản lý tuyển dụng
+              Lịch phỏng vấn của tôi
             </Link>
           )}
           {isAuthenticated && (
