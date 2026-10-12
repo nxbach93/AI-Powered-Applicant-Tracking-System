@@ -6,17 +6,27 @@ import { useParams, useRouter } from 'next/navigation';
 import { JobPosting } from '@/types/job';
 import jobApi from '@/lib/services/job-api';
 import { JobStatusBadge } from '@/components/jobs/JobStatusBadge';
+import { useAuth } from '@/lib/auth-context';
+import { submitApplicationApi } from '@/lib/application-api';
 
 function JobDetailContent() {
   const params = useParams();
   const router = useRouter();
   const id = String(params.id);
+  const { user, isAuthenticated } = useAuth();
 
   const [job, setJob] = useState<JobPosting | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Trạng thái nộp hồ sơ ứng tuyển
+  const [selectedCvFile, setSelectedCvFile] = useState<File | null>(null);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [isSubmittingApp, setIsSubmittingApp] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applySuccess, setApplySuccess] = useState(false);
 
   useEffect(() => {
     async function fetchJobDetail() {
@@ -340,54 +350,173 @@ function JobDetailContent() {
               </svg>
             </button>
 
-            <div className="text-center space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-1">
-                  Ứng tuyển vị trí {job.title}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Mã tin tuyển dụng: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-[11px] font-mono text-slate-700">{job.id}</code>
-                </p>
-              </div>
-
-              {/* Thông báo thông tin tích hợp TV3 */}
-              <div className="bg-blue-50/70 border border-blue-200/60 rounded-2xl p-4 text-left space-y-2 text-xs text-blue-900">
-                <div className="font-semibold flex items-center gap-1.5 text-blue-800">
-                  <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            {applySuccess ? (
+              <div className="text-center space-y-4 py-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Cổng tích hợp Module Ứng tuyển (TV3)</span>
                 </div>
-                <p className="text-blue-700/90 leading-relaxed">
-                  Tính năng tiếp nhận tệp CV vật lý (PDF/DOCX) và phân tích NLP đang được kết nối với module của <strong>TV3 (Nguyễn Quốc Anh)</strong>.
-                </p>
-                <div className="text-[11px] text-blue-600/80 pt-1 border-t border-blue-200/50">
-                  Endpoint nộp hồ sơ chuẩn: <code className="font-mono font-semibold">POST /api/applications</code> (multipart/form-data: <span className="font-semibold">jobPostingId</span>, <span className="font-semibold">cvFile</span>).
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Nộp hồ sơ thành công!</h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Đơn ứng tuyển của bạn cho vị trí <span className="font-semibold text-slate-800">{job.title}</span> đã được ghi nhận. Nhà tuyển dụng sẽ xem xét và phản hồi trong thời gian sớm nhất.
+                  </p>
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsApplyModalOpen(false);
+                      setApplySuccess(false);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-all"
+                  >
+                    Đóng lại
+                  </button>
+                  <Link
+                    href="/candidate/applications"
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center shadow-sm shadow-blue-500/20"
+                  >
+                    Xem đơn ứng tuyển
+                  </Link>
                 </div>
               </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!isAuthenticated) {
+                    router.push('/auth/login');
+                    return;
+                  }
+                  if (user?.role !== 'CANDIDATE') {
+                    setApplyError('Chỉ tài khoản Ứng viên (CANDIDATE) mới có thể nộp hồ sơ.');
+                    return;
+                  }
+                  if (!selectedCvFile) {
+                    setApplyError('Vui lòng chọn tệp CV (PDF hoặc DOCX) để nộp hồ sơ.');
+                    return;
+                  }
+                  setIsSubmittingApp(true);
+                  setApplyError(null);
+                  try {
+                    await submitApplicationApi({
+                      jobPostingId: id,
+                      cvFile: selectedCvFile,
+                      coverLetter: coverLetter.trim() || undefined,
+                    });
+                    setApplySuccess(true);
+                  } catch (err: any) {
+                    setApplyError(err.message || 'Nộp hồ sơ thất bại. Vui lòng thử lại.');
+                  } finally {
+                    setIsSubmittingApp(false);
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div className="text-center space-y-1">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Ứng tuyển vị trí {job.title}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Tải lên bản CV cá nhân (PDF hoặc DOCX) để nộp trực tiếp tới bộ phận tuyển dụng
+                  </p>
+                </div>
 
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsApplyModalOpen(false)}
-                  className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-all"
-                >
-                  Đóng lại
-                </button>
-                <Link
-                  href="/candidate/profile"
-                  className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center shadow-sm shadow-blue-500/20"
-                >
-                  Xem hồ sơ CV của tôi
-                </Link>
-              </div>
-            </div>
+                {applyError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex items-center gap-2">
+                    <svg className="w-4 h-4 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{applyError}</span>
+                  </div>
+                )}
+
+                {/* Chọn file CV */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-left">
+                    Tệp CV ứng tuyển <span className="text-red-500">*</span>
+                  </label>
+                  <div className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-4 text-center bg-slate-50/50 transition-colors cursor-pointer relative">
+                    <input
+                      type="file"
+                      accept=".pdf,.docx,.doc"
+                      required
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setSelectedCvFile(file);
+                        if (file) setApplyError(null);
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                    {selectedCvFile ? (
+                      <div className="flex items-center justify-center gap-2 text-blue-600">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-xs font-semibold text-slate-800 truncate max-w-xs">{selectedCvFile.name}</span>
+                        <span className="text-[10px] text-slate-500 font-mono">({Math.round(selectedCvFile.size / 1024)} KB)</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <svg className="w-6 h-6 text-slate-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <div className="text-xs text-slate-600 font-medium">
+                          Bấm vào đây để chọn tệp CV <span className="text-blue-600 underline">hoặc kéo thả vào đây</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">Hỗ trợ định dạng PDF, DOCX (Tối đa 5MB)</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Thư giới thiệu */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-left">
+                    Thư giới thiệu / Lời nhắn (Không bắt buộc)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    placeholder="Giới thiệu ngắn về kinh nghiệm, thế mạnh và lý do bạn phù hợp với vị trí này..."
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsApplyModalOpen(false)}
+                    disabled={isSubmittingApp}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-all disabled:opacity-50"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingApp || !selectedCvFile}
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingApp ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Đang nộp...</span>
+                      </>
+                    ) : (
+                      <span>Nộp hồ sơ ngay</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
