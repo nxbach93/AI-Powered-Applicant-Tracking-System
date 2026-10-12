@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import prisma from './lib/prisma';
 import authRoutes from './routes/auth.routes';
+import jobRoutes from './routes/job.routes';
 import authController from './controllers/auth.controller';
 import { authenticateJWT } from './middlewares/auth.middleware';
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Đăng ký các Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // Endpoint cập nhật Profile ứng viên theo API_CONTRACT 3.1.4
 app.put('/api/candidates/profile', authenticateJWT, (req, res) => authController.updateProfile(req, res));
