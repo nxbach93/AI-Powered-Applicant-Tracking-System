@@ -518,7 +518,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + expiresMinutes * 60 * 1000);
 
     // Lưu token hash vào bảng password_reset_tokens
-    await prisma.passwordResetToken.create({
+    const resetTokenRecord = await prisma.passwordResetToken.create({
       data: {
         userId: user.id,
         tokenHash,
@@ -530,8 +530,28 @@ export class AuthService {
     const resetUrl = `${frontendUrl}/auth/reset-password?token=${rawToken}`;
 
     // Gửi email chứa đường dẫn đặt lại mật khẩu
-    // Nếu gửi email thất bại, ném lỗi để không đánh dấu thành công sai sự thật
-    await emailService.sendPasswordResetEmail(user.email, resetUrl, expiresMinutes);
+    // Nếu gửi email thất bại, ném lỗi và hoàn tác token/rateLimit để không lưu token mồ côi
+    try {
+      await emailService.sendPasswordResetEmail(user.email, resetUrl, expiresMinutes);
+    } catch (sendErr) {
+      // Hoàn tác lượt tính rate limit nếu lỗi hệ thống
+      const timestamps = this.resetEmailRequestLog.get(normalizedEmail) || [];
+      timestamps.pop();
+      this.resetEmailRequestLog.set(normalizedEmail, timestamps);
+
+      // Dọn dẹp token mồ côi trong CSDL
+      if (typeof (prisma.passwordResetToken as any)?.delete === 'function') {
+        try {
+          await prisma.passwordResetToken.delete({
+            where: { id: resetTokenRecord.id }
+          });
+        } catch {
+          // Bỏ qua lỗi dọn dẹp nếu có
+        }
+      }
+
+      throw sendErr;
+    }
 
     return {
       message: neutralMessage

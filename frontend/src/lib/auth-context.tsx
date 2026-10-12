@@ -47,8 +47,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    return getCurrentUser<User>();
+  });
+  const [token, setToken] = useState<string | null>(() => {
+    return getAuthToken();
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
@@ -88,21 +92,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Khởi tạo trạng thái phiên đăng nhập khi mount và lắng nghe đồng bộ giữa các tabs
   useEffect(() => {
+    // Xác thực lại với máy chủ qua /api/auth/me
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshUser();
+
+    // Đồng bộ trạng thái khi người dùng đăng nhập hoặc đăng xuất ở tab khác
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ats_token' || e.key === 'ats_user') {
+        refreshUser();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [refreshUser]);
 
   const login = (newToken: string, newUser: User) => {
+    // Cập nhật localStorage và React state ngay lập tức
     setAuthSession(newToken, newUser);
     setToken(newToken);
     setUser(newUser);
+    setIsLoading(false);
+
+    // Đồng bộ thêm thông tin chi tiết (CandidateProfile) từ /api/auth/me ngầm
+    apiRequest<User>('/auth/me', {
+      headers: { Authorization: `Bearer ${newToken}` }
+    })
+      .then((res) => {
+        if (res.success && res.data) {
+          setUser(res.data);
+          setAuthSession(newToken, res.data);
+        }
+      })
+      .catch(() => {
+        // Giữ nguyên thông tin đã nhận từ login
+      });
   };
 
   const logout = () => {
     clearAuthSession();
     setToken(null);
     setUser(null);
+    setIsLoading(false);
   };
 
   return (

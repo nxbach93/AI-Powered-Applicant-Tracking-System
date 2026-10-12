@@ -10,6 +10,7 @@ export interface SendMailOptions {
 export class EmailService {
   private transporter: Transporter | null = null;
   private isMockMode: boolean = false;
+  private etherealAccount: any = null;
 
   constructor() {
     this.initTransporter();
@@ -54,6 +55,7 @@ export class EmailService {
    */
   public resetTransporter() {
     this.isMockMode = false;
+    this.etherealAccount = null;
     this.initTransporter();
   }
 
@@ -65,18 +67,50 @@ export class EmailService {
   }
 
   /**
+   * Lấy hoặc kích hoạt transporter phù hợp cho môi trường hiện tại
+   */
+  private async getActiveTransporter(): Promise<Transporter> {
+    if (this.transporter) {
+      return this.transporter;
+    }
+
+    // Nếu đang trong môi trường development hoặc test và chưa cấu hình SMTP thật,
+    // tự động kích hoạt Ethereal test inbox để developer có thể kiểm thử luồng nhận email
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        if (!this.etherealAccount) {
+          this.etherealAccount = await nodemailer.createTestAccount();
+        }
+        this.transporter = nodemailer.createTransport({
+          host: this.etherealAccount.smtp.host,
+          port: this.etherealAccount.smtp.port,
+          secure: this.etherealAccount.smtp.secure,
+          auth: {
+            user: this.etherealAccount.user,
+            pass: this.etherealAccount.pass
+          }
+        });
+        console.log('[EmailService] ℹ️  SMTP chưa cấu hình trong .env. Đã kích hoạt Ethereal Test Account cho môi trường Development.');
+        return this.transporter;
+      } catch (err: any) {
+        console.warn('[EmailService] Không thể kết nối Ethereal, sử dụng jsonTransport giả lập:', err.message);
+        this.transporter = nodemailer.createTransport({ jsonTransport: true });
+        return this.transporter;
+      }
+    }
+
+    throw new Error('Dịch vụ gửi email chưa được cấu hình thông số SMTP hợp lệ trên hệ thống.');
+  }
+
+  /**
    * Gửi email chung
    */
   public async sendMail(options: SendMailOptions): Promise<{ messageId?: string; accepted?: string[] }> {
-    if (!this.isConfigured() || !this.transporter) {
-      // Báo lỗi rõ ràng khi chưa cấu hình SMTP để không đánh dấu thành công sai sự thật
-      throw new Error('Dịch vụ gửi email chưa được cấu hình thông số SMTP hợp lệ trên hệ thống.');
-    }
-
+    const activeTransporter = await this.getActiveTransporter();
     const from = process.env.SMTP_FROM || 'AI-Powered ATS <no-reply@ats-system.com>';
 
     try {
-      const info = await this.transporter.sendMail({
+      const info = await activeTransporter.sendMail({
         from,
         to: options.to,
         subject: options.subject,
@@ -84,9 +118,14 @@ export class EmailService {
         text: options.text || options.html.replace(/<[^>]*>/g, '')
       });
 
+      // Nếu đang dùng Ethereal test account, cung cấp đường dẫn xem trước email (không in token hay password ra console)
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      if (previewUrl) {
+        console.log(`[EmailService] ✉️  Xem trước email gửi đến ${options.to} tại: ${previewUrl}`);
+      }
+
       return info;
     } catch (error: any) {
-      // Log lỗi an toàn không làm lộ secrets
       console.error('Lỗi khi gửi email qua SMTP:', error.message || error);
       throw new Error('Không thể gửi email đến hộp thư người nhận. Vui lòng thử lại sau.');
     }

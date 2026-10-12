@@ -1,13 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import prisma from './lib/prisma';
 import authRoutes from './routes/auth.routes';
 import authController from './controllers/auth.controller';
 import { authenticateJWT } from './middlewares/auth.middleware';
-
-// Khởi tạo các biến môi trường từ file .env
-dotenv.config();
 
 const app = express();
 
