@@ -22,6 +22,7 @@ function buildAdapterConfig(connectionString: string) {
       password: decodeURIComponent(parsed.password || ''),
       database: parsed.pathname ? parsed.pathname.replace(/^\//, '') : 'ats_database',
       connectTimeout: 5000,
+      allowPublicKeyRetrieval: true,
     };
   } catch {
     return connectionString;
