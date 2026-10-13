@@ -427,6 +427,8 @@ export class ApplicationService {
       minScore?: number;
       page?: number;
       limit?: number;
+      search?: string;
+      excludeStatuses?: string;
     }
   ) {
     const page = Math.max(1, query.page || 1);
@@ -451,9 +453,39 @@ export class ApplicationService {
     // Xây dựng filter where
     if (query.status && Object.values(ApplicationStatus).includes(query.status as ApplicationStatus)) {
       where.status = query.status as ApplicationStatus;
+    } else if (query.excludeStatuses) {
+      const rawStatuses = query.excludeStatuses.split(',').map(s => s.trim());
+      const validExcludes = rawStatuses.filter(s => Object.values(ApplicationStatus).includes(s as ApplicationStatus)) as ApplicationStatus[];
+      if (validExcludes.length > 0) {
+        where.status = { notIn: validExcludes };
+      }
     }
+
     if (query.minScore !== undefined && !isNaN(query.minScore)) {
       where.aiMatchScore = { gte: query.minScore };
+    }
+
+    // Tìm kiếm theo tên ứng viên, email hoặc tiêu đề công việc
+    if (query.search && query.search.trim()) {
+      const searchTerm = query.search.trim();
+      where.OR = [
+        {
+          candidateProfile: {
+            user: {
+              OR: [
+                { firstName: { contains: searchTerm } },
+                { lastName: { contains: searchTerm } },
+                { email: { contains: searchTerm } }
+              ]
+            }
+          }
+        },
+        {
+          jobPosting: {
+            title: { contains: searchTerm }
+          }
+        }
+      ];
     }
 
     // Xây dựng sắp xếp

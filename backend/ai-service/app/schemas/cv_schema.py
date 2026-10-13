@@ -103,6 +103,16 @@ class CVDataInput(BaseModel):
         examples=[3],
         ge=0,
     )
+    education_major: Optional[str] = Field(
+        default=None,
+        description="Chuyên ngành học vấn trích xuất từ CV (v.d. 'IT & Khoa học máy tính', 'Kế toán')",
+        examples=["IT & Khoa học máy tính"],
+    )
+    domain: Optional[str] = Field(
+        default=None,
+        description="Lĩnh vực chuyên môn phát hiện được từ CV (v.d. 'IT & Phần mềm', 'Kế toán & Tài chính')",
+        examples=["IT & Phần mềm"],
+    )
 
 
 class JDDataInput(BaseModel):
@@ -131,6 +141,16 @@ class JDDataInput(BaseModel):
         description="Số năm kinh nghiệm tối thiểu yêu cầu",
         examples=[3],
         ge=0,
+    )
+    required_education_major: Optional[str] = Field(
+        default=None,
+        description="Chuyên ngành học vấn bắt buộc (nếu có, v.d. 'Kế toán', 'IT')",
+        examples=["Kế toán"],
+    )
+    jd_domain: Optional[str] = Field(
+        default=None,
+        description="Lĩnh vực chuyên môn của JD (nếu đã xác định từ phân tích ngoài)",
+        examples=["Kế toán & Tài chính"],
     )
 
 
@@ -175,8 +195,8 @@ class MatchCVRequest(BaseModel):
 
 class ScoreBreakdown(BaseModel):
     """
-    Chi tiết điểm thành phần theo công thức trọng số.
-    FinalScore = (skill_weight × skill_score) + (exp_weight × exp_score) + (semantic_weight × semantic_score)
+    Chi tiết điểm 5 thành phần theo công thức trọng số v2.
+    FinalScore = 0.30×domain + 0.25×skill + 0.25×experience + 0.10×education + 0.10×semantic
     """
     skill_score: float = Field(
         description="Điểm khớp kỹ năng (0.0 – 100.0): Tỷ lệ % kỹ năng CV đáp ứng yêu cầu JD",
@@ -185,14 +205,28 @@ class ScoreBreakdown(BaseModel):
         le=100.0,
     )
     experience_score: float = Field(
-        description="Điểm kinh nghiệm (0.0 – 100.0): Đánh giá dựa trên số năm kinh nghiệm yêu cầu",
+        description="Điểm kinh nghiệm (0.0 – 100.0): Đánh giá dựa trên số năm kinh nghiệm liên quan",
         examples=[85.0],
         ge=0.0,
         le=100.0,
     )
     semantic_score: float = Field(
-        description="Điểm tương đồng ngữ nghĩa (0.0 – 100.0): Cosine similarity giữa embedding CV và JD",
+        description="Điểm tương đồng ngữ nghĩa (0.0 – 100.0): Cosine similarity giữa CV và JD",
         examples=[89.2],
+        ge=0.0,
+        le=100.0,
+    )
+    domain_score: float = Field(
+        default=50.0,
+        description="Điểm phù hợp chuyên môn ngành nghề (0.0 – 100.0): So sánh lĩnh vực CV với JD",
+        examples=[95.0],
+        ge=0.0,
+        le=100.0,
+    )
+    education_score: float = Field(
+        default=50.0,
+        description="Điểm phù hợp học vấn (0.0 – 100.0): So sánh chuyên ngành học với yêu cầu JD",
+        examples=[80.0],
         ge=0.0,
         le=100.0,
     )
@@ -200,22 +234,17 @@ class ScoreBreakdown(BaseModel):
 
 class MatchCVResponse(BaseModel):
     """
-    Response schema cho POST /api/v1/match-cv.
-    Khớp 100% với mục 4.2 của docs/API_CONTRACT.md.
-
-    Trường này được Core API dùng để:
-    - Lưu `ai_match_score` vào Application.aiMatchScore
-    - Lưu `parsed_skills` vào Application.parsedSkills
-    - Lưu `summary` vào Application.aiAnalysisSummary
+    Response schema cho POST /api/v1/match-cv — Hybrid Scoring Engine v2.
+    5 trụ cột: Domain Relevance (30%) + Skill (25%) + Experience (25%) + Education (10%) + Semantic (10%)
     """
     success: bool = Field(default=True)
     match_score: float = Field(
-        description="Điểm tổng hợp cuối cùng (0.0 – 100.0), tính theo công thức trọng số",
+        description="Điểm tổng hợp cuối cùng (0.0 – 100.0), tính theo công thức 5 trụ cột",
         examples=[88.5],
         ge=0.0,
         le=100.0,
     )
-    score_breakdown: ScoreBreakdown = Field(description="Chi tiết điểm từng thành phần")
+    score_breakdown: ScoreBreakdown = Field(description="Chi tiết điểm 5 thành phần")
     parsed_skills: list[str] = Field(
         default_factory=list,
         description="Kỹ năng trích xuất được từ CV ứng viên",
@@ -240,4 +269,34 @@ class MatchCVResponse(BaseModel):
     summary: str = Field(
         description="Tóm tắt phân tích AI bằng ngôn ngữ tự nhiên để HR đọc",
         examples=["Ứng viên phù hợp tốt với vị trí Senior Frontend. Điểm kỹ năng đạt 90%, sở hữu kinh nghiệm thực chiến với React và TypeScript."],
+    )
+    # ---- Trường mới v2 ----
+    experience_gap: Optional[int] = Field(
+        default=None,
+        description="Chênh lệch kinh nghiệm: âm=thiếu, 0=vừa đủ, dương=vượt quá yêu cầu",
+        examples=[-1],
+    )
+    experience_known: bool = Field(
+        default=True,
+        description="Có xác định được số năm kinh nghiệm từ CV hay không",
+    )
+    domain_detected: Optional[str] = Field(
+        default=None,
+        description="Lĩnh vực chuyên môn phát hiện từ CV (v.d. 'IT & Phần mềm')",
+        examples=["IT & Phần mềm"],
+    )
+    jd_domain_detected: Optional[str] = Field(
+        default=None,
+        description="Lĩnh vực chuyên môn phát hiện từ JD (v.d. 'Kế toán & Tài chính')",
+        examples=["Kế toán & Tài chính"],
+    )
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="Danh sách cảnh báo cho HR: thiếu KN, chuyên môn khác ngành, dữ liệu không đủ...",
+        examples=[["Thiếu 1 năm kinh nghiệm liên quan", "Chuyên môn khác ngành (IT vs Kế toán)"]],
+    )
+    education_major: Optional[str] = Field(
+        default=None,
+        description="Chuyên ngành học vấn phát hiện từ CV",
+        examples=["IT & Khoa học máy tính"],
     )

@@ -92,6 +92,8 @@ export class InterviewService {
     const scheduledDate = new Date(dto.scheduledAt);
     if (isNaN(scheduledDate.getTime())) {
       details.push({ field: 'scheduledAt', message: 'Thời gian phỏng vấn không đúng định dạng ngày giờ hợp lệ' });
+    } else if (scheduledDate <= new Date()) {
+      details.push({ field: 'scheduledAt', message: 'Thời gian phỏng vấn phải là một thời điểm trong tương lai' });
     }
 
     if (dto.durationMinutes !== undefined && (dto.durationMinutes < 15 || dto.durationMinutes > 480)) {
@@ -123,9 +125,13 @@ export class InterviewService {
       throw new NotFoundError('Không tìm thấy đơn ứng tuyển với ID tương ứng', 'APPLICATION_NOT_FOUND');
     }
 
-    // Không thể lên lịch cho đơn đã bị từ chối hoặc đã rút
-    if (application.status === ApplicationStatus.REJECTED || application.status === ApplicationStatus.WITHDRAWN) {
-      throw new ValidationError('Không thể lên lịch phỏng vấn cho đơn đã bị từ chối hoặc ứng viên đã rút đơn');
+    // Không thể lên lịch cho đơn đã bị từ chối, đã rút hoặc đã tuyển
+    if (
+      application.status === ApplicationStatus.REJECTED ||
+      application.status === ApplicationStatus.WITHDRAWN ||
+      application.status === ApplicationStatus.HIRED
+    ) {
+      throw new ValidationError('Không thể lên lịch phỏng vấn cho đơn đã kết thúc (từ chối, đã tuyển hoặc ứng viên đã rút đơn)');
     }
 
     // 2. Xác định Interviewer (mặc định là current user nếu không truyền)

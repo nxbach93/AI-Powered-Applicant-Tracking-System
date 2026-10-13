@@ -276,6 +276,8 @@ export interface HrApplicationFilters {
   minScore?: number;
   page?: number;
   limit?: number;
+  search?: string;
+  excludeStatuses?: string;
 }
 
 export async function getHrJobsOverviewApi(): Promise<HrJobOverview[]> {
@@ -297,6 +299,8 @@ export async function getApplicationsByJobApi(
   if (filters.minScore !== undefined) query.append('minScore', String(filters.minScore));
   if (filters.page) query.append('page', String(filters.page));
   if (filters.limit) query.append('limit', String(filters.limit));
+  if (filters.search) query.append('search', filters.search);
+  if (filters.excludeStatuses) query.append('excludeStatuses', filters.excludeStatuses);
 
   const url = `/applications/job/${jobId}${query.toString() ? `?${query.toString()}` : ''}`;
   const res = await apiRequest<HrApplicationItem[]>(url);

@@ -10,6 +10,39 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Precision Intelligence ATS Design Tokens */
+  --color-primary: #004ac6;
+  --color-primary-container: #2563eb;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #eeefff;
+
+  --color-secondary: #4b41e1;
+  --color-secondary-container: #645efb;
+  --color-secondary-fixed: #e2dfff;
+  --color-on-secondary-fixed: #0f0069;
+
+  --color-tertiary: #006243;
+  --color-tertiary-container: #007d57;
+  --color-tertiary-fixed: #85f8c4;
+  --color-on-tertiary-fixed: #002114;
+
+  --color-surface: #f8f9ff;
+  --color-surface-dim: #cbdbf5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #434655;
+  --color-outline: #737686;
+  --color-outline-variant: #c3c6d7;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,3 +57,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* OpenType Tabular Figures for alignment in metrics, scoreboards, and data tables */
+.font-tabular-mono,
+.tnum {
+  font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1, "cv04" 1;
+  font-variant-numeric: tabular-nums;
+}
+

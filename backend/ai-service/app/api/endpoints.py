@@ -17,7 +17,13 @@ from app.schemas.cv_schema import (
     MatchWeightsInput,
     ParseCVResponse,
 )
-from app.services.cv_parser import parse_cv_text
+from app.services.cv_parser import (
+    detect_domain,
+    extract_education_major,
+    extract_jd_min_experience,
+    extract_skills,
+    parse_cv_text,
+)
 from app.services.matching_engine import match_cv_with_jd
 from app.services.text_extractor import (
     EmptyFileError,
@@ -206,22 +212,40 @@ async def analyze_cv(
         jd_lines = [line.strip() for line in jd_text.strip().splitlines() if line.strip()]
         jd_title = jd_lines[0] if jd_lines else "Vị trí tuyển dụng"
 
+        # Bóc tách thông tin năng lực yêu cầu từ văn bản JD
+        jd_required_skills = extract_skills(jd_text)
+        jd_min_exp = extract_jd_min_experience(jd_text) or 0
+        jd_domain = detect_domain(jd_text)
+        jd_edu_major = extract_education_major(jd_text)
+
         jd_input = JDDataInput(
             title=jd_title,
             description=jd_text,
             requirements="",
-            required_skills=[],
-            min_experience_years=0,
+            required_skills=jd_required_skills,
+            min_experience_years=jd_min_exp,
+            required_education_major=jd_edu_major,
+            jd_domain=jd_domain,
         )
         cv_input = CVDataInput(
             raw_text=extracted_text,
             skills=parsed_data.get("parsed_skills", []),
-            experience_years=parsed_data.get("experience_years", 0),
+            experience_years=parsed_data.get("experience_years"),
+            education_major=parsed_data.get("education_major"),
+            domain=parsed_data.get("domain"),
         )
+        def _parse_weight(val, default_val: float) -> float:
+            try:
+                if hasattr(val, "default"):
+                    return float(val.default)
+                return float(val)
+            except Exception:
+                return default_val
+
         weights = MatchWeightsInput(
-            skill_weight=skill_weight,
-            exp_weight=exp_weight,
-            semantic_weight=semantic_weight,
+            skill_weight=_parse_weight(skill_weight, 0.5),
+            exp_weight=_parse_weight(exp_weight, 0.3),
+            semantic_weight=_parse_weight(semantic_weight, 0.2),
         )
 
         match_result = match_cv_with_jd(MatchCVRequest(cv_data=cv_input, jd_data=jd_input, weights=weights))
@@ -235,9 +259,18 @@ async def analyze_cv(
                 "skill_score": match_result.score_breakdown.skill_score,
                 "experience_score": match_result.score_breakdown.experience_score,
                 "semantic_score": match_result.score_breakdown.semantic_score,
+                "domain_score": match_result.score_breakdown.domain_score,
+                "education_score": match_result.score_breakdown.education_score,
             },
             "matched_skills": match_result.matched_skills,
             "missing_skills": match_result.missing_skills,
+            "experience_years": match_result.experience_years,
+            "experience_gap": match_result.experience_gap,
+            "experience_known": match_result.experience_known,
+            "domain_detected": match_result.domain_detected,
+            "jd_domain_detected": match_result.jd_domain_detected,
+            "warnings": match_result.warnings,
+            "education_major": match_result.education_major,
         }
     except TextExtractionError as exc:
         return JSONResponse(

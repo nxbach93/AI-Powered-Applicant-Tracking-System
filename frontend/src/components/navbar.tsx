@@ -12,8 +12,8 @@ export function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Không hiển thị Navbar trên các trang xác thực để giữ giao diện tập trung
-  if (pathname.startsWith('/auth/')) {
+  // Không hiển thị Navbar trên các trang xác thực hoặc phân hệ HR/Dashboard (sử dụng Enterprise HrLayout riêng)
+  if (pathname.startsWith('/auth/') || pathname.startsWith('/hr') || pathname.startsWith('/dashboard')) {
     return null;
   }
 

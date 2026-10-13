@@ -107,4 +107,3 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup resources on shutdown."""
     print("[AI-Service] ATS AI Service shutting down...")
-

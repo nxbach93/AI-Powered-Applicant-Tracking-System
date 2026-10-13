@@ -261,6 +261,18 @@ function HrApplicationDetailContent({ id }: { id: string }) {
                 'Cập nhật trạng thái'
               )}
             </button>
+
+            {detail.status !== 'REJECTED' && detail.status !== 'WITHDRAWN' && detail.status !== 'HIRED' && (
+              <Link
+                href={`/hr/interviews?applicationId=${detail.id}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-500/20 transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Lên lịch phỏng vấn
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -289,13 +301,32 @@ function HrApplicationDetailContent({ id }: { id: string }) {
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-700">Điểm số tương đồng với JD (Match Score):</span>
-                    <span className="text-base font-extrabold text-blue-600 font-mono">
-                      {aiMatchScore.toFixed(1)}%
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        aiMatchScore >= 80
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          : aiMatchScore >= 50
+                          ? "bg-blue-100 text-blue-800 border border-blue-200"
+                          : "bg-rose-100 text-rose-800 border border-rose-200"
+                      }`}>
+                        {aiMatchScore >= 80 ? "Phù hợp xuất sắc" : aiMatchScore >= 50 ? "Phù hợp cơ bản" : "Lệch chuyên môn / Chưa đạt"}
+                      </span>
+                      <span className={`text-base font-extrabold font-mono ${
+                        aiMatchScore >= 80 ? "text-emerald-600" : aiMatchScore >= 50 ? "text-blue-600" : "text-rose-600"
+                      }`}>
+                        {aiMatchScore.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
                   <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+                      className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${
+                        aiMatchScore >= 80
+                          ? "from-emerald-500 to-teal-600"
+                          : aiMatchScore >= 50
+                          ? "from-blue-500 to-indigo-600"
+                          : "from-rose-500 to-red-600"
+                      }`}
                       style={{ width: `${Math.min(100, Math.max(0, aiMatchScore))}%` }}
                     />
                   </div>
@@ -305,11 +336,24 @@ function HrApplicationDetailContent({ id }: { id: string }) {
                 {aiAnalysisSummary && (
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                      Nhận xét tóm tắt từ mô hình AI:
+                      Nhận xét tóm tắt từ mô hình AI (Hybrid Scoring v2):
                     </h4>
-                    <p className="text-xs leading-relaxed text-slate-700 bg-indigo-50/50 border border-indigo-100 p-4 rounded-xl">
-                      {aiAnalysisSummary}
-                    </p>
+                    <div className={`text-xs leading-relaxed p-4 rounded-xl border ${
+                      aiMatchScore < 50
+                        ? "bg-rose-50/60 border-rose-200 text-rose-900"
+                        : "bg-indigo-50/50 border-indigo-100 text-slate-700"
+                    }`}>
+                      {aiAnalysisSummary.includes("Lưu ý cho HR:") && (
+                        <div className="mb-3 pb-3 border-b border-rose-200/60 flex items-start gap-2 text-rose-800 font-medium">
+                          <span className="text-sm">⚠️</span>
+                          <div>
+                            <span className="font-bold">Cảnh báo tuyển dụng: </span>
+                            {aiAnalysisSummary.split("Lưu ý cho HR:")[1]?.split("Đề xuất:")[0]?.trim()}
+                          </div>
+                        </div>
+                      )}
+                      <p>{aiAnalysisSummary}</p>
+                    </div>
                   </div>
                 )}
 

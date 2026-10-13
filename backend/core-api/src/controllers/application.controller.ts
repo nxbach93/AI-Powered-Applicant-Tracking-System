@@ -205,7 +205,7 @@ export class ApplicationController {
   async getApplicationsByJob(req: Request, res: Response) {
     try {
       const jobId = req.params.jobId as string;
-      const { status, sortBy, order, minScore, page, limit } = req.query;
+      const { status, sortBy, order, minScore, page, limit, search, excludeStatuses } = req.query;
 
       const result = await applicationService.getApplicationsByJob(jobId, {
         status: status as string,
@@ -213,7 +213,9 @@ export class ApplicationController {
         order: order as string,
         minScore: minScore ? parseFloat(minScore as string) : undefined,
         page: page ? parseInt(page as string, 10) : 1,
-        limit: limit ? parseInt(limit as string, 10) : 10
+        limit: limit ? parseInt(limit as string, 10) : 10,
+        search: search as string,
+        excludeStatuses: excludeStatuses as string,
       });
 
       return res.status(200).json({
