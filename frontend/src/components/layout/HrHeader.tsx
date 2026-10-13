@@ -127,11 +127,20 @@ export function HrHeader({ isCollapsed, onOpenMobile }: HrHeaderProps) {
           </button>
 
           <Link
-            href="/profile"
-            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 ring-1 ring-outline-variant/60 text-on-primary font-bold text-xs hover:opacity-90 transition-opacity"
-            title={userDisplayName}
+            href="/hr/settings?tab=account"
+            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 ring-1 ring-outline-variant/60 text-on-primary font-bold text-xs hover:opacity-90 transition-opacity overflow-hidden"
+            title={`${userDisplayName} (Tài khoản HR & Đơn vị)`}
           >
-            {userInitials}
+            {user?.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.avatarUrl}
+                alt={userDisplayName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              userInitials
+            )}
           </Link>
         </div>
       </div>

@@ -12,7 +12,7 @@ export function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Không hiển thị Navbar trên các trang xác thực hoặc phân hệ HR/Dashboard (sử dụng Enterprise HrLayout riêng)
+  // Không hiển thị Candidate Navbar trên các trang xác thực hoặc phân hệ HR (sử dụng Enterprise HrLayout riêng)
   if (
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/hr') ||
@@ -27,260 +27,192 @@ export function Navbar() {
     try {
       logout();
       setIsMobileMenuOpen(false);
-      // Sử dụng router.replace để thay thế lịch sử duyệt, ngăn nút Back hiển thị lại dữ liệu phiên
       router.replace('/auth/login');
     } finally {
       setIsLoggingOut(false);
     }
   };
 
-  const getRoleBadge = (role?: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'HR':
-        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'CANDIDATE':
-      default:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-    }
-  };
-
-  const isHrOrAdmin = user?.role === 'HR' || user?.role === 'ADMIN';
-  const isCandidate = user?.role === 'CANDIDATE';
+  const displayName = user
+    ? `${user.lastName || ''} ${user.firstName || ''}`.trim() || user.email.split('@')[0]
+    : 'Ứng viên';
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm shadow-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          {/* Logo & Tên dự án */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-500/20 group-hover:bg-blue-700 transition-colors">
-                AI
-              </div>
-              <span className="text-xl font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
-                ATS Portal
+    <header className="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-outline-variant/30">
+      <div className="h-16 w-full max-w-[1440px] px-gutter md:px-gutter-desktop mx-auto flex items-center justify-between gap-space-lg">
+        {/* Left Section: Brand Logo & Navigation */}
+        <div className="flex items-center gap-space-xl">
+          <Link href="/" className="flex items-center gap-space-sm group">
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm group-hover:bg-primary-container transition-colors">
+              <span className="material-symbols-outlined text-[20px]">neurology</span>
+            </div>
+            <div className="flex items-center gap-space-xs">
+              <span className="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
+                TalentPulse
               </span>
+              <span className="px-space-xs py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold tracking-wider uppercase border border-secondary-fixed-dim/40">
+                AI
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-space-lg h-16">
+            <Link
+              href="/"
+              className={`h-16 flex items-center px-space-xs font-body-base text-body-base transition-colors ${
+                pathname === '/'
+                  ? 'text-primary font-body-base-medium border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Trang chủ
             </Link>
+            <Link
+              href="/jobs"
+              className={`h-16 flex items-center px-space-xs font-body-base text-body-base transition-colors ${
+                pathname.startsWith('/jobs')
+                  ? 'text-primary font-body-base-medium border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Việc làm
+            </Link>
+            <Link
+              href="/candidate/interviews"
+              className={`h-16 flex items-center px-space-xs font-body-base text-body-base transition-colors ${
+                pathname.startsWith('/candidate/interviews')
+                  ? 'text-primary font-body-base-medium border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Lịch phỏng vấn
+            </Link>
+            <Link
+              href="/profile"
+              className={`h-16 flex items-center px-space-xs font-body-base text-body-base transition-colors ${
+                pathname === '/profile' || pathname === '/candidate/profile'
+                  ? 'text-primary font-body-base-medium border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Hồ sơ cá nhân
+            </Link>
+            <Link
+              href="/candidate/applications"
+              className={`h-16 flex items-center px-space-xs font-body-base text-body-base transition-colors ${
+                pathname.startsWith('/candidate/applications')
+                  ? 'text-primary font-body-base-medium border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Đơn ứng tuyển
+            </Link>
+          </nav>
+        </div>
 
-            {/* Menu điều hướng chính trên Desktop */}
-            <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
-              <Link
-                href="/"
-                className={`px-3 py-2 rounded-lg transition-colors ${
-                  pathname === '/'
-                    ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
+        {/* Right Section: Notification, User Chip & Logout */}
+        <div className="flex items-center gap-space-md">
+          {isLoading ? (
+            <div className="h-8 w-28 bg-surface-container animate-pulse rounded-lg" />
+          ) : isAuthenticated && user ? (
+            <>
+              <button
+                aria-label="Thông báo"
+                className="relative w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
+                type="button"
               >
-                Trang chủ
-              </Link>
+                <span className="material-symbols-outlined text-[22px]">notifications</span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface-container-lowest" />
+              </button>
+
+              <div className="h-6 w-[1px] bg-outline-variant/40 hidden sm:block" />
+
               <Link
-                href="/jobs"
-                className={`px-3 py-2 rounded-lg transition-colors ${
-                  pathname.startsWith('/jobs')
-                    ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
+                href={user.role === 'CANDIDATE' ? '/profile' : '/hr/settings?tab=account'}
+                className="flex items-center gap-space-sm pl-space-xs hover:opacity-85 transition-opacity"
               >
-                Việc làm
-              </Link>
-              {isAuthenticated && isHrOrAdmin && (
-                <>
-                  <Link
-                    href="/dashboard/jobs"
-                    className={`px-3 py-2 rounded-lg transition-colors ${
-                      pathname.startsWith('/dashboard/jobs')
-                        ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
-                  >
-                    Quản lý tuyển dụng
-                  </Link>
-                  <Link
-                    href="/hr/interviews"
-                    className={`px-3 py-2 rounded-lg transition-colors ${
-                      pathname === '/hr/interviews'
-                        ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
-                  >
-                    Lịch phỏng vấn
-                  </Link>
-                  <Link
-                    href="/hr/workflow"
-                    className={`px-3 py-2 rounded-lg transition-colors ${
-                      pathname === '/hr/workflow'
-                        ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
-                  >
-                    Tiến trình tuyển dụng
-                  </Link>
-                </>
-              )}
-
-              {/* Điều hướng dành cho Candidate */}
-              {isAuthenticated && isCandidate && (
-                <Link
-                  href="/candidate/interviews"
-                  className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname === '/candidate/interviews'
-                      ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  Lịch phỏng vấn
-                </Link>
-              )}
-              {isAuthenticated && (
-                <Link
-                  href="/profile"
-                  className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname === '/profile' || pathname === '/candidate/profile'
-                      ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  Hồ sơ cá nhân
-                </Link>
-              )}
-              {isAuthenticated && user?.role === 'CANDIDATE' && (
-                <Link
-                  href="/candidate/applications"
-                  className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname.startsWith('/candidate/applications')
-                      ? 'text-blue-600 bg-blue-50/70 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  Đơn ứng tuyển
-                </Link>
-              )}
-              {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
-                <Link
-                  href="/hr/applications"
-                  className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname.startsWith('/hr/applications')
-                      ? 'text-indigo-600 bg-indigo-50/70 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  Quản lý Ứng viên
-                </Link>
-              )}
-            </nav>
-          </div>
-
-          {/* Khu vực trạng thái tài khoản & Đăng xuất trên Desktop */}
-          <div className="hidden md:flex items-center gap-4">
-            {isLoading ? (
-              <div className="h-9 w-28 bg-slate-100 animate-pulse rounded-lg" />
-            ) : isAuthenticated && user ? (
-              <div className="flex items-center gap-3">
-                {/* Thông tin người dùng */}
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all text-left"
-                >
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center overflow-hidden shrink-0">
                   {user.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={user.avatarUrl}
-                      alt={user.firstName}
-                      className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                      alt={displayName}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs uppercase">
-                      {user.firstName?.charAt(0) || 'U'}
-                    </div>
+                    <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
                   )}
-                  <div>
-                    <div className="text-xs font-semibold text-slate-900 truncate max-w-[140px]">
-                      {user.firstName} {user.lastName}
-                    </div>
-                    <span className={`inline-block text-[10px] font-bold px-1.5 py-0.2 rounded border ${getRoleBadge(user.role)}`}>
-                      {user.role}
+                </div>
+                <div className="hidden sm:flex flex-col text-left">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="font-body-sm-medium text-body-sm-medium text-on-surface leading-tight max-w-[130px] truncate font-semibold">
+                      {displayName}
                     </span>
+                    <span className="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
                   </div>
-                </Link>
+                  <span className="font-label-xs text-label-xs text-secondary leading-tight uppercase font-bold tracking-wider">
+                    {user.role}
+                  </span>
+                </div>
+              </Link>
 
-                {/* Nút Đăng xuất */}
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100/80 border border-red-200/60 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Đăng xuất khỏi hệ thống"
-                  aria-label="Đăng xuất"
-                >
-                  {isLoggingOut ? (
-                    <>
-                      <svg className="animate-spin h-3.5 w-3.5 text-red-600" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Đang thoát...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      <span>Đăng xuất</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/auth/login"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition-colors"
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/20 transition-all"
-                >
-                  Đăng ký
-                </Link>
-              </div>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-colors disabled:opacity-50"
+                title="Đăng xuất"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {isLoggingOut ? 'sync' : 'logout'}
+                </span>
+                <span className="hidden md:inline font-body-sm-medium text-body-sm-medium">
+                  {isLoggingOut ? 'Đang thoát...' : 'Đăng xuất'}
+                </span>
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/auth/login"
+                className="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-primary font-body-sm-medium text-body-sm-medium transition-colors"
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                href="/auth/register"
+                className="px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-body-sm-medium text-body-sm-medium shadow-sm transition-colors"
+              >
+                Đăng ký
+              </Link>
+            </div>
+          )}
 
-          {/* Nút Hamburger trên Mobile */}
-          <div className="flex md:hidden items-center">
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </div>
+          {/* Mobile Menu Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors"
+            aria-label="Toggle navigation menu"
+          >
+            <span className="material-symbols-outlined text-[24px]">
+              {isMobileMenuOpen ? 'close' : 'menu'}
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* Menu thả xuống trên Mobile */}
+      {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-100 bg-white px-4 pt-3 pb-4 space-y-3">
+        <div className="lg:hidden bg-surface-container-lowest border-t border-outline-variant/30 px-gutter py-space-md shadow-lg space-y-1">
           <Link
             href="/"
             onClick={() => setIsMobileMenuOpen(false)}
-            className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-              pathname === '/' ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+            className={`block px-space-md py-2.5 rounded-lg font-body-sm-medium text-body-sm-medium ${
+              pathname === '/'
+                ? 'bg-primary-fixed text-on-primary-fixed font-semibold'
+                : 'text-on-surface-variant hover:bg-surface-container-low'
             }`}
           >
             Trang chủ
@@ -288,138 +220,51 @@ export function Navbar() {
           <Link
             href="/jobs"
             onClick={() => setIsMobileMenuOpen(false)}
-            className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-              pathname.startsWith('/jobs') ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+            className={`block px-space-md py-2.5 rounded-lg font-body-sm-medium text-body-sm-medium ${
+              pathname.startsWith('/jobs')
+                ? 'bg-primary-fixed text-on-primary-fixed font-semibold'
+                : 'text-on-surface-variant hover:bg-surface-container-low'
             }`}
           >
             Việc làm
           </Link>
-          {isAuthenticated && isHrOrAdmin && (
-            <>
-              <Link
-                href="/dashboard/jobs"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                  pathname.startsWith('/dashboard/jobs')
-                    ? 'text-blue-600 bg-blue-50 font-semibold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                Quản lý tuyển dụng
-              </Link>
-              <Link
-                href="/hr/interviews"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                  pathname === '/hr/interviews' ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                Lịch phỏng vấn
-              </Link>
-              <Link
-                href="/hr/workflow"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                  pathname === '/hr/workflow' ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                Tiến trình tuyển dụng
-              </Link>
-            </>
-          )}
-
-          {isAuthenticated && isCandidate && (
-            <Link
-              href="/candidate/interviews"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                pathname === '/candidate/interviews' ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              Lịch phỏng vấn của tôi
-            </Link>
-          )}
-          {isAuthenticated && (
-            <Link
-              href="/profile"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                pathname === '/profile' || pathname === '/candidate/profile'
-                  ? 'text-blue-600 bg-blue-50 font-semibold'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              Hồ sơ cá nhân
-            </Link>
-          )}
-
-          {isAuthenticated && user?.role === 'CANDIDATE' && (
-            <Link
-              href="/candidate/applications"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                pathname.startsWith('/candidate/applications')
-                  ? 'text-blue-600 bg-blue-50 font-semibold'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              Đơn ứng tuyển của tôi
-            </Link>
-          )}
-
-          {isAuthenticated && (user?.role === 'HR' || user?.role === 'ADMIN') && (
-            <Link
-              href="/hr/applications"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                pathname.startsWith('/hr/applications')
-                  ? 'text-indigo-600 bg-indigo-50 font-semibold'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              Quản lý Ứng viên & Đơn tuyển
-            </Link>
-          )}
-
-          <div className="pt-3 border-t border-slate-100">
-            {isAuthenticated && user ? (
-              <div className="space-y-3">
-                <div className="px-3 text-xs text-slate-500">
-                  Đăng nhập với: <span className="font-semibold text-slate-900">{user.email}</span> ({user.role})
-                </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-600 bg-red-50 border border-red-200/60 hover:bg-red-100 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span>{isLoggingOut ? 'Đang thoát...' : 'Đăng xuất'}</span>
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  href="/auth/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-center px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200"
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  href="/auth/register"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-center px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Đăng ký
-                </Link>
-              </div>
-            )}
-          </div>
+          <Link
+            href="/candidate/interviews"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`block px-space-md py-2.5 rounded-lg font-body-sm-medium text-body-sm-medium ${
+              pathname.startsWith('/candidate/interviews')
+                ? 'bg-primary-fixed text-on-primary-fixed font-semibold'
+                : 'text-on-surface-variant hover:bg-surface-container-low'
+            }`}
+          >
+            Lịch phỏng vấn
+          </Link>
+          <Link
+            href="/profile"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`block px-space-md py-2.5 rounded-lg font-body-sm-medium text-body-sm-medium ${
+              pathname === '/profile' || pathname === '/candidate/profile'
+                ? 'bg-primary-fixed text-on-primary-fixed font-semibold'
+                : 'text-on-surface-variant hover:bg-surface-container-low'
+            }`}
+          >
+            Hồ sơ cá nhân
+          </Link>
+          <Link
+            href="/candidate/applications"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`block px-space-md py-2.5 rounded-lg font-body-sm-medium text-body-sm-medium ${
+              pathname.startsWith('/candidate/applications')
+                ? 'bg-primary-fixed text-on-primary-fixed font-semibold'
+                : 'text-on-surface-variant hover:bg-surface-container-low'
+            }`}
+          >
+            Đơn ứng tuyển
+          </Link>
         </div>
       )}
     </header>
   );
 }
+
+export default Navbar;

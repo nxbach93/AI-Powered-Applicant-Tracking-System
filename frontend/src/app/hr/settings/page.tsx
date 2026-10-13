@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { apiRequest } from '@/lib/api';
 
@@ -22,8 +23,11 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   autoRescreenOnUpload: true,
 };
 
-export default function HrSettingsPage() {
+function HrSettingsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, refreshUser } = useAuth();
+
   const [activeTab, setActiveTab] = useState<'ai' | 'account'>('ai');
 
   // AI Criteria State
@@ -32,16 +36,41 @@ export default function HrSettingsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // HR Account Form State
-  const [formData, setFormData] = useState({
+  const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
+    avatarUrl: '',
     phone: '',
     department: 'Ban Tuyển dụng & Phát triển Nhân tài (Talent Acquisition)',
   });
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
   const [isUpdatingAccount, setIsUpdatingAccount] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
 
-  // Load saved AI Settings from localStorage if available
+  // Password Change State
+  const [pwdData, setPwdData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
+  const [pwdErrors, setPwdErrors] = useState<Record<string, string>>({});
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [isUpdatingPwd, setIsUpdatingPwd] = useState(false);
+
+  // Sync tab from URL query param
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'account') {
+      setActiveTab('account');
+    } else if (tabParam === 'ai') {
+      setActiveTab('ai');
+    }
+  }, [searchParams]);
+
+  // Load saved AI Settings from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('ats_ai_settings');
@@ -56,10 +85,11 @@ export default function HrSettingsPage() {
   // Pre-fill user data
   useEffect(() => {
     if (user) {
-      setFormData((prev) => ({
+      setProfileData((prev) => ({
         ...prev,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
+        avatarUrl: user.avatarUrl || '',
         phone: user.candidateProfile?.phone || '',
       }));
     }
@@ -71,6 +101,11 @@ export default function HrSettingsPage() {
     const timer = setTimeout(() => setToastMessage(null), 4000);
     return () => clearTimeout(timer);
   }, [toastMessage]);
+
+  const switchTab = (tab: 'ai' | 'account') => {
+    setActiveTab(tab);
+    router.replace(`/hr/settings?tab=${tab}`);
+  };
 
   const handleSaveAiSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,8 +119,39 @@ export default function HrSettingsPage() {
     }
   };
 
+  const validateProfileForm = () => {
+    const errs: Record<string, string> = {};
+
+    if (!profileData.firstName.trim()) {
+      errs.firstName = 'Họ và tên đệm không được để trống';
+    }
+
+    if (!profileData.lastName.trim()) {
+      errs.lastName = 'Tên không được để trống';
+    }
+
+    if (profileData.avatarUrl.trim()) {
+      const urlRegex = /^(https?:\/\/|\/uploads\/)/i;
+      if (!urlRegex.test(profileData.avatarUrl.trim())) {
+        errs.avatarUrl = 'URL ảnh phải bắt đầu bằng http://, https:// hoặc /uploads/';
+      }
+    }
+
+    if (profileData.phone.trim()) {
+      const phoneRegex = /^[0-9]{10,11}$/;
+      if (!phoneRegex.test(profileData.phone.trim())) {
+        errs.phone = 'Số điện thoại phải từ 10 đến 11 chữ số';
+      }
+    }
+
+    setProfileErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSaveAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateProfileForm()) return;
+
     setIsUpdatingAccount(true);
     setAccountError(null);
 
@@ -93,9 +159,10 @@ export default function HrSettingsPage() {
       const res = await apiRequest('/auth/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          phone: formData.phone.trim() || null,
+          firstName: profileData.firstName.trim(),
+          lastName: profileData.lastName.trim(),
+          avatarUrl: profileData.avatarUrl.trim() || null,
+          phone: profileData.phone.trim() || null,
         }),
       });
 
@@ -103,6 +170,13 @@ export default function HrSettingsPage() {
         setToastMessage('Cập nhật thông tin tài khoản HR thành công!');
         await refreshUser();
       } else {
+        if (res.error?.details && res.error.details.length > 0) {
+          const fieldErrs: Record<string, string> = {};
+          res.error.details.forEach((err) => {
+            fieldErrs[err.field] = err.message;
+          });
+          setProfileErrors(fieldErrs);
+        }
         setAccountError(res.error?.message || 'Cập nhật tài khoản thất bại');
       }
     } catch (err: any) {
@@ -111,6 +185,76 @@ export default function HrSettingsPage() {
       setIsUpdatingAccount(false);
     }
   };
+
+  const validatePasswordForm = () => {
+    const errs: Record<string, string> = {};
+
+    if (!pwdData.currentPassword) {
+      errs.currentPassword = 'Vui lòng nhập mật khẩu hiện tại';
+    }
+
+    if (!pwdData.newPassword) {
+      errs.newPassword = 'Vui lòng nhập mật khẩu mới';
+    } else if (pwdData.newPassword.length < 6) {
+      errs.newPassword = 'Mật khẩu mới phải có tối thiểu 6 ký tự';
+    } else if (pwdData.currentPassword && pwdData.newPassword === pwdData.currentPassword) {
+      errs.newPassword = 'Mật khẩu mới không được trùng với mật khẩu hiện tại';
+    }
+
+    if (!pwdData.confirmPassword) {
+      errs.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
+    } else if (pwdData.newPassword && pwdData.confirmPassword !== pwdData.newPassword) {
+      errs.confirmPassword = 'Xác nhận mật khẩu mới không khớp';
+    }
+
+    setPwdErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validatePasswordForm()) return;
+
+    setIsUpdatingPwd(true);
+    setPwdError(null);
+
+    try {
+      const res = await apiRequest('/auth/change-password', {
+        method: 'PUT',
+        body: JSON.stringify({
+          currentPassword: pwdData.currentPassword,
+          newPassword: pwdData.newPassword,
+        }),
+      });
+
+      if (res.success) {
+        setToastMessage('Đổi mật khẩu tài khoản HR thành công!');
+        setPwdData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        setPwdErrors({});
+      } else {
+        if (res.error?.details && res.error.details.length > 0) {
+          const fieldErrs: Record<string, string> = {};
+          res.error.details.forEach((err) => {
+            fieldErrs[err.field] = err.message;
+          });
+          setPwdErrors(fieldErrs);
+        }
+        setPwdError(res.error?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại');
+      }
+    } catch (err: any) {
+      setPwdError(err.message || 'Lỗi hệ thống khi đổi mật khẩu');
+    } finally {
+      setIsUpdatingPwd(false);
+    }
+  };
+
+  const userDisplayName = user
+    ? `${user.lastName || ''} ${user.firstName || ''}`.trim() || user.email.split('@')[0]
+    : 'Chuyên viên Tuyển dụng';
 
   return (
     <div className="flex flex-col w-full space-y-6 max-w-5xl">
@@ -134,7 +278,7 @@ export default function HrSettingsPage() {
             </span>
           </div>
           <p className="font-body-sm text-body-sm text-outline mt-0.5">
-            Cấu hình trọng số thuật toán so khớp CV, ngưỡng điểm thẩm định và thông tin chuyên viên phụ trách tuyển dụng.
+            Cấu hình trọng số thuật toán so khớp CV, ngưỡng điểm thẩm định và hồ sơ chuyên viên phụ trách tuyển dụng.
           </p>
         </div>
 
@@ -142,7 +286,7 @@ export default function HrSettingsPage() {
         <div className="flex items-center bg-surface-container rounded-lg p-1 shadow-sm shrink-0">
           <button
             type="button"
-            onClick={() => setActiveTab('ai')}
+            onClick={() => switchTab('ai')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-label-sm text-label-sm font-semibold transition-all ${
               activeTab === 'ai'
                 ? 'bg-surface-container-lowest text-primary shadow-xs'
@@ -154,7 +298,7 @@ export default function HrSettingsPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('account')}
+            onClick={() => switchTab('account')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-label-sm text-label-sm font-semibold transition-all ${
               activeTab === 'account'
                 ? 'bg-surface-container-lowest text-primary shadow-xs'
@@ -375,110 +519,420 @@ export default function HrSettingsPage() {
 
       {/* TAB 2: TÀI KHOẢN HR & ĐƠN VỊ */}
       {activeTab === 'account' && (
-        <form onSubmit={handleSaveAccount} className="space-y-6">
-          {accountError && (
-            <div className="p-4 rounded-xl bg-error-container text-on-error-container text-body-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px]">error</span>
-              <span>{accountError}</span>
+        <div className="space-y-6">
+          {/* SECTION A: ĐƠN VỊ & PHÂN QUYỀN HỆ THỐNG */}
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 space-y-5">
+            <div className="flex items-center justify-between border-b border-outline-variant/30 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[22px]">corporate_fare</span>
+                <div>
+                  <h2 className="font-headline-lg text-headline-lg text-on-surface font-semibold">
+                    Đơn vị Doanh nghiệp & Quyền hạn Hệ thống
+                  </h2>
+                  <p className="font-label-xs text-label-xs text-outline">
+                    Thông tin đơn vị tuyển dụng và cấp độ phân quyền trong tổ chức Enterprise ATS
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-xs font-label-xs bg-tertiary-fixed text-on-tertiary-fixed font-semibold">
+                <span className="w-2 h-2 rounded-full bg-tertiary" />
+                {user?.isActive ? 'Đang kích hoạt' : 'Tạm khóa'}
+              </span>
             </div>
-          )}
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-surface-container-low space-y-1">
+                <span className="font-label-xs text-label-xs text-outline uppercase tracking-wider block">
+                  Đơn vị chủ quản
+                </span>
+                <strong className="font-body-sm-medium text-body-sm-medium text-on-surface block">
+                  TalentPulse Enterprise ATS
+                </strong>
+                <span className="font-label-xs text-label-xs text-on-surface-variant">Khối Nhân sự & Tuyển dụng</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-surface-container-low space-y-1">
+                <span className="font-label-xs text-label-xs text-outline uppercase tracking-wider block">
+                  Cấp độ vai trò
+                </span>
+                <strong className="font-body-sm-medium text-body-sm-medium text-primary block">
+                  {user?.role === 'ADMIN' ? 'Quản trị viên (ADMIN)' : 'Chuyên viên Tuyển dụng (HR)'}
+                </strong>
+                <span className="font-label-xs text-label-xs text-outline">
+                  {user?.role === 'ADMIN' ? 'Toàn quyền cấu hình & tuyển dụng' : 'Quản lý tin tuyển dụng & phỏng vấn'}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-surface-container-low space-y-1">
+                <span className="font-label-xs text-label-xs text-outline uppercase tracking-wider block">
+                  Mã định danh (ID)
+                </span>
+                <strong className="font-tabular-mono text-body-sm-medium text-body-sm-medium text-on-surface block">
+                  #{user?.id ? user.id.slice(0, 8).toUpperCase() : 'HR-SYSTEM'}
+                </strong>
+                <span className="font-label-xs text-label-xs text-outline">Định danh nội bộ bảo mật</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-surface-container-low space-y-1">
+                <span className="font-label-xs text-label-xs text-outline uppercase tracking-wider block">
+                  Ngày tham gia
+                </span>
+                <strong className="font-body-sm-medium text-body-sm-medium text-on-surface block">
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'Đang hoạt động'}
+                </strong>
+                <span className="font-label-xs text-label-xs text-outline">Xác thực hệ thống nội bộ</span>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION B: HỒ SƠ CHUYÊN VIÊN & AVATAR */}
+          <form onSubmit={handleSaveAccount} className="space-y-6">
+            {accountError && (
+              <div className="p-4 rounded-xl bg-error-container text-on-error-container text-body-sm flex items-center gap-2">
+                <span className="material-symbols-outlined text-[20px]">error</span>
+                <span>{accountError}</span>
+              </div>
+            )}
+
+            <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 space-y-5">
+              <div className="flex items-center gap-2 border-b border-outline-variant/30 pb-3">
+                <span className="material-symbols-outlined text-primary text-[22px]">manage_accounts</span>
+                <div>
+                  <h2 className="font-headline-lg text-headline-lg text-on-surface font-semibold">
+                    Hồ sơ Chuyên viên Tuyển dụng
+                  </h2>
+                  <p className="font-label-xs text-label-xs text-outline">
+                    Thông tin định danh hiển thị trên biên bản phỏng vấn, thư mời và các thông báo gửi đến ứng viên.
+                  </p>
+                </div>
+              </div>
+
+              {/* Avatar Selector & Preview */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-4 rounded-xl bg-surface-container-low/60 border border-outline-variant/30">
+                <div className="relative shrink-0">
+                  {profileData.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={profileData.avatarUrl}
+                      alt={userDisplayName}
+                      className="w-16 h-16 rounded-full object-cover ring-2 ring-primary shadow-sm"
+                      onError={() => {
+                        setProfileErrors((prev) => ({
+                          ...prev,
+                          avatarUrl: 'Ảnh đại diện không thể tải từ URL đã nhập',
+                        }));
+                      }}
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-xl shadow-sm">
+                      {userDisplayName
+                        .split(' ')
+                        .filter(Boolean)
+                        .slice(-2)
+                        .map((w) => w[0]?.toUpperCase())
+                        .join('') || 'HR'}
+                    </div>
+                  )}
+                  <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-tertiary ring-2 ring-surface-container-lowest" />
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <label className="block font-body-sm-medium text-body-sm-medium text-on-surface font-semibold">
+                    Đường dẫn ảnh đại diện (Avatar URL)
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      placeholder="https://images.unsplash.com/... hoặc /uploads/avatar.png"
+                      value={profileData.avatarUrl}
+                      onChange={(e) => {
+                        setProfileData({ ...profileData, avatarUrl: e.target.value });
+                        if (profileErrors.avatarUrl) {
+                          setProfileErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.avatarUrl;
+                            return updated;
+                          });
+                        }
+                      }}
+                      className={`flex-1 h-10 px-3 rounded-lg bg-surface-container-lowest border font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary ${
+                        profileErrors.avatarUrl ? 'border-error' : 'border-outline-variant/60'
+                      }`}
+                    />
+                    {profileData.avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setProfileData({ ...profileData, avatarUrl: '' })}
+                        className="px-3 h-10 rounded-lg text-outline hover:text-error hover:bg-error-container/30 border border-outline-variant/50 text-body-sm transition-colors shrink-0"
+                      >
+                        Gỡ ảnh
+                      </button>
+                    )}
+                  </div>
+                  {profileErrors.avatarUrl && (
+                    <p className="text-label-xs font-label-xs text-error">{profileErrors.avatarUrl}</p>
+                  )}
+                  <p className="font-label-xs text-label-xs text-outline">
+                    Hỗ trợ các đường dẫn ảnh công khai HTTPS hoặc ảnh trong thư mục /uploads/.
+                  </p>
+                </div>
+              </div>
+
+              {/* Form Input Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
+                    Họ và tên đệm <span className="text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={profileData.lastName}
+                    onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                    placeholder="Ví dụ: Nguyễn Thị"
+                    className={`w-full h-10 px-3 rounded-lg bg-surface-container-low border font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary ${
+                      profileErrors.lastName ? 'border-error' : 'border-outline-variant/60'
+                    }`}
+                  />
+                  {profileErrors.lastName && (
+                    <p className="mt-1 text-label-xs font-label-xs text-error">{profileErrors.lastName}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
+                    Tên <span className="text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={profileData.firstName}
+                    onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                    placeholder="Ví dụ: Thu Trang"
+                    className={`w-full h-10 px-3 rounded-lg bg-surface-container-low border font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary ${
+                      profileErrors.firstName ? 'border-error' : 'border-outline-variant/60'
+                    }`}
+                  />
+                  {profileErrors.firstName && (
+                    <p className="mt-1 text-label-xs font-label-xs text-error">{profileErrors.firstName}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
+                    Địa chỉ Email đăng nhập (Hệ thống)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      disabled
+                      value={user?.email || ''}
+                      className="w-full h-10 px-3 pr-20 rounded-lg bg-surface-container-low border border-outline-variant/40 font-body-sm text-outline cursor-not-allowed"
+                    />
+                    <span className="absolute right-2.5 top-2.5 px-2 py-0.5 rounded text-label-xs font-label-xs bg-surface-container text-outline">
+                      Cố định
+                    </span>
+                  </div>
+                  <span className="font-label-xs text-label-xs text-outline mt-1 block">
+                    Định danh đăng nhập không thể thay đổi
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
+                    Số điện thoại liên hệ
+                  </label>
+                  <input
+                    type="tel"
+                    value={profileData.phone}
+                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                    placeholder="Ví dụ: 0987654321"
+                    className={`w-full h-10 px-3 rounded-lg bg-surface-container-low border font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary ${
+                      profileErrors.phone ? 'border-error' : 'border-outline-variant/60'
+                    }`}
+                  />
+                  {profileErrors.phone && (
+                    <p className="mt-1 text-label-xs font-label-xs text-error">{profileErrors.phone}</p>
+                  )}
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
+                    Phòng ban / Bộ phận tuyển dụng
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.department}
+                    onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
+                    className="w-full h-10 px-3 rounded-lg bg-surface-container-low border border-outline-variant/60 font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="submit"
+                disabled={isUpdatingAccount}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-body-sm-medium text-body-sm-medium shadow-sm transition-all disabled:opacity-60"
+              >
+                <span className={`material-symbols-outlined text-[18px] ${isUpdatingAccount ? 'animate-spin' : ''}`}>
+                  {isUpdatingAccount ? 'sync' : 'save'}
+                </span>
+                <span>{isUpdatingAccount ? 'Đang cập nhật...' : 'Lưu thông tin hồ sơ HR'}</span>
+              </button>
+            </div>
+          </form>
+
+          {/* SECTION C: BẢO MẬT & ĐỔI MẬT KHẨU */}
           <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 space-y-5">
             <div className="flex items-center gap-2 border-b border-outline-variant/30 pb-3">
-              <span className="material-symbols-outlined text-primary text-[22px]">manage_accounts</span>
+              <span className="material-symbols-outlined text-secondary text-[22px]">lock_reset</span>
               <div>
                 <h2 className="font-headline-lg text-headline-lg text-on-surface font-semibold">
-                  Hồ sơ Chuyên viên Tuyển dụng
+                  Bảo mật & Đổi mật khẩu HR
                 </h2>
                 <p className="font-label-xs text-label-xs text-outline">
-                  Thông tin định danh hiển thị trên biên bản phỏng vấn và các email gửi đến ứng viên.
+                  Thay đổi mật khẩu đăng nhập định kỳ để đảm bảo an toàn truy cập dữ liệu tuyển dụng của tập đoàn.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {pwdError && (
+              <div className="p-4 rounded-xl bg-error-container text-on-error-container text-body-sm flex items-center gap-2">
+                <span className="material-symbols-outlined text-[20px]">error</span>
+                <span>{pwdError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-4 max-w-2xl">
+              {/* Mật khẩu hiện tại */}
               <div>
                 <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
-                  Họ và tên đệm <span className="text-error">*</span>
+                  Mật khẩu hiện tại <span className="text-error">*</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  placeholder="Ví dụ: Nguyễn Thị"
-                  className="w-full h-10 px-3 rounded-lg bg-surface-container-low border border-outline-variant/60 font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showCurrentPwd ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="Nhập mật khẩu hiện tại"
+                    value={pwdData.currentPassword}
+                    onChange={(e) => setPwdData({ ...pwdData, currentPassword: e.target.value })}
+                    className={`w-full h-10 px-3 pr-10 rounded-lg bg-surface-container-low border font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary ${
+                      pwdErrors.currentPassword ? 'border-error' : 'border-outline-variant/60'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPwd(!showCurrentPwd)}
+                    className="absolute right-3 top-2.5 text-outline hover:text-on-surface"
+                    tabIndex={-1}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showCurrentPwd ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+                {pwdErrors.currentPassword && (
+                  <p className="mt-1 text-label-xs font-label-xs text-error">{pwdErrors.currentPassword}</p>
+                )}
               </div>
 
+              {/* Mật khẩu mới */}
               <div>
                 <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
-                  Tên <span className="text-error">*</span>
+                  Mật khẩu mới <span className="text-error">*</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  placeholder="Ví dụ: Thu Trang"
-                  className="w-full h-10 px-3 rounded-lg bg-surface-container-low border border-outline-variant/60 font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPwd ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    placeholder="Tối thiểu 6 ký tự"
+                    value={pwdData.newPassword}
+                    onChange={(e) => setPwdData({ ...pwdData, newPassword: e.target.value })}
+                    className={`w-full h-10 px-3 pr-10 rounded-lg bg-surface-container-low border font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary ${
+                      pwdErrors.newPassword ? 'border-error' : 'border-outline-variant/60'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPwd(!showNewPwd)}
+                    className="absolute right-3 top-2.5 text-outline hover:text-on-surface"
+                    tabIndex={-1}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showNewPwd ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+                {pwdErrors.newPassword && (
+                  <p className="mt-1 text-label-xs font-label-xs text-error">{pwdErrors.newPassword}</p>
+                )}
               </div>
 
+              {/* Xác nhận mật khẩu mới */}
               <div>
                 <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
-                  Địa chỉ Email đăng nhập
+                  Xác nhận mật khẩu mới <span className="text-error">*</span>
                 </label>
-                <input
-                  type="email"
-                  disabled
-                  value={user?.email || ''}
-                  className="w-full h-10 px-3 rounded-lg bg-surface-container-low border border-outline-variant/40 font-body-sm text-outline cursor-not-allowed"
-                />
-                <span className="font-label-xs text-label-xs text-outline">Email hệ thống không thể thay đổi</span>
+                <div className="relative">
+                  <input
+                    type={showConfirmPwd ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    placeholder="Nhập lại mật khẩu mới để xác nhận"
+                    value={pwdData.confirmPassword}
+                    onChange={(e) => setPwdData({ ...pwdData, confirmPassword: e.target.value })}
+                    className={`w-full h-10 px-3 pr-10 rounded-lg bg-surface-container-low border font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary ${
+                      pwdErrors.confirmPassword ? 'border-error' : 'border-outline-variant/60'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPwd(!showConfirmPwd)}
+                    className="absolute right-3 top-2.5 text-outline hover:text-on-surface"
+                    tabIndex={-1}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showConfirmPwd ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+                {pwdErrors.confirmPassword && (
+                  <p className="mt-1 text-label-xs font-label-xs text-error">{pwdErrors.confirmPassword}</p>
+                )}
               </div>
 
-              <div>
-                <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
-                  Số điện thoại liên hệ
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Ví dụ: 0987654321"
-                  className="w-full h-10 px-3 rounded-lg bg-surface-container-low border border-outline-variant/60 font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isUpdatingPwd}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary hover:bg-secondary-container text-on-secondary font-body-sm-medium text-body-sm-medium shadow-sm transition-all disabled:opacity-60"
+                >
+                  <span className={`material-symbols-outlined text-[18px] ${isUpdatingPwd ? 'animate-spin' : ''}`}>
+                    {isUpdatingPwd ? 'sync' : 'key'}
+                  </span>
+                  <span>{isUpdatingPwd ? 'Đang cập nhật mật khẩu...' : 'Cập nhật mật khẩu mới'}</span>
+                </button>
               </div>
-
-              <div className="sm:col-span-2">
-                <label className="block font-body-sm-medium text-body-sm-medium text-on-surface mb-1">
-                  Phòng ban phụ trách
-                </label>
-                <input
-                  type="text"
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg bg-surface-container-low border border-outline-variant/60 font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-            </div>
+            </form>
           </div>
-
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={isUpdatingAccount}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-body-sm-medium text-body-sm-medium shadow-sm transition-all disabled:opacity-60"
-            >
-              <span className={`material-symbols-outlined text-[18px] ${isUpdatingAccount ? 'animate-spin' : ''}`}>
-                {isUpdatingAccount ? 'sync' : 'save'}
-              </span>
-              <span>{isUpdatingAccount ? 'Đang cập nhật...' : 'Cập nhật thông tin tài khoản'}</span>
-            </button>
-          </div>
-        </form>
+        </div>
       )}
     </div>
+  );
+}
+
+export default function HrSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20 text-outline">
+          <span className="material-symbols-outlined animate-spin text-[28px] mr-2">sync</span>
+          <span>Đang tải cài đặt hệ thống...</span>
+        </div>
+      }
+    >
+      <HrSettingsContent />
+    </Suspense>
   );
 }

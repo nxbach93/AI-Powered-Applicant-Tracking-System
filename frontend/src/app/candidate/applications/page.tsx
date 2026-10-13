@@ -1,287 +1,593 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { RoleGuard } from '@/components/auth/role-guard';
-import { ApplicationStatusBadge } from '@/components/candidate/application-status-badge';
-import { getMyApplicationsApi, ApplicationListItem, withdrawApplicationApi } from '@/lib/application-api';
+import {
+  getMyApplicationsApi,
+  ApplicationListItem,
+  withdrawApplicationApi,
+} from '@/lib/application-api';
 
 const WITHDRAWABLE = new Set(['SUBMITTED', 'SCREENING']);
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-      <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mb-5 border border-slate-200">
-        <svg className="w-9 h-9 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-      </div>
-      <h3 className="text-base font-bold text-slate-800 mb-2">Chưa có đơn ứng tuyển nào</h3>
-      <p className="text-sm text-slate-500 mb-6 max-w-xs">
-        Bạn chưa nộp hồ sơ vào vị trí nào. Khám phá các tin tuyển dụng và bắt đầu ứng tuyển ngay!
-      </p>
-      <Link
-        href="/"
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        Tìm việc làm
-      </Link>
-    </div>
-  );
-}
-
-function ApplicationCard({ app, onWithdraw }: { app: ApplicationListItem; onWithdraw: (id: string) => void }) {
-  const [withdrawing, setWithdrawing] = useState(false);
-  const canWithdraw = WITHDRAWABLE.has(app.status);
-
-  const handleWithdraw = async () => {
-    if (!confirm(`Bạn có chắc muốn rút đơn ứng tuyển vào "${app.jobPosting.title}" không?`)) return;
-    setWithdrawing(true);
-    try {
-      await withdrawApplicationApi(app.id);
-      onWithdraw(app.id);
-    } catch (e: any) {
-      alert(e.message || 'Không thể rút đơn. Vui lòng thử lại');
-    } finally {
-      setWithdrawing(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm shadow-slate-100 p-5 hover:shadow-md hover:border-slate-300 transition-all">
-      <div className="flex items-start justify-between gap-3">
-        {/* Thông tin công việc */}
-        <div className="flex-1 min-w-0">
-          <Link
-            href={`/candidate/applications/${app.id}`}
-            className="block group"
-          >
-            <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">
-              {app.jobPosting.title}
-            </h3>
-          </Link>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-            {app.jobPosting.department && (
-              <span className="text-xs text-slate-500 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                {app.jobPosting.department}
-              </span>
-            )}
-            {app.jobPosting.location && (
-              <span className="text-xs text-slate-500 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {app.jobPosting.location}
-              </span>
-            )}
-            {app.jobPosting.employmentType && (
-              <span className="text-xs text-slate-500">{app.jobPosting.employmentType}</span>
-            )}
-          </div>
-        </div>
-        <ApplicationStatusBadge status={app.status} />
-      </div>
-
-      {/* AI Score + Interview */}
-      <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-100">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400">Nộp ngày:</span>
-          <span className="text-[11px] font-semibold text-slate-600">{formatDate(app.appliedAt)}</span>
-        </div>
-
-        {app.aiMatchScore !== null && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-1 h-1 bg-slate-300 rounded-full" />
-            <div className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              <span className="text-[11px] font-bold text-amber-600">{app.aiMatchScore}% phù hợp</span>
-            </div>
-          </div>
-        )}
-
-        {app.upcomingInterview && (
-          <div className="flex items-center gap-1.5 ml-auto">
-            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-            <span className="text-[11px] font-semibold text-indigo-600">
-              Phỏng vấn: {formatDate(app.upcomingInterview.scheduledAt)}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between mt-3">
-        <Link
-          href={`/candidate/applications/${app.id}`}
-          className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
-        >
-          Xem chi tiết →
-        </Link>
-        {canWithdraw && (
-          <button
-            onClick={handleWithdraw}
-            disabled={withdrawing}
-            className="text-xs font-medium text-red-500 hover:text-red-700 hover:underline disabled:opacity-50 transition-colors"
-          >
-            {withdrawing ? 'Đang xử lý...' : 'Rút đơn'}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function MyApplicationsPage() {
+function CandidateApplicationsContent() {
   const [applications, setApplications] = useState<ApplicationListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'screening' | 'interview' | 'offer' | 'withdrawn'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchApplications = useCallback(async () => {
     try {
       const data = await getMyApplicationsApi();
       setApplications(data);
-    } catch (e: any) {
-      setError(e.message || 'Không thể tải dữ liệu ứng tuyển');
+    } catch {
+      setToastMessage('Không thể tải danh sách đơn ứng tuyển');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
-  const handleWithdraw = (id: string) => {
-    setApplications(prev => prev.map(a => a.id === id ? { ...a, status: 'WITHDRAWN' as const } : a));
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchApplications();
   };
 
-  const STATUS_OPTIONS = [
-    { value: 'ALL', label: 'Tất cả' },
-    { value: 'SUBMITTED', label: 'Đã nộp' },
-    { value: 'SCREENING', label: 'Sàng lọc' },
-    { value: 'SHORTLISTED', label: 'Danh sách ngắn' },
-    { value: 'INTERVIEWED', label: 'Đã phỏng vấn' },
-    { value: 'OFFERED', label: 'Nhận Offer' },
-    { value: 'HIRED', label: 'Đã tuyển' },
-    { value: 'REJECTED', label: 'Từ chối' },
-    { value: 'WITHDRAWN', label: 'Đã rút' },
-  ];
+  const handleWithdraw = async (appId: string, jobTitle: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn rút đơn ứng tuyển vị trí "${jobTitle}" không?`)) return;
 
-  const filtered = statusFilter === 'ALL'
-    ? applications
-    : applications.filter(a => a.status === statusFilter);
+    setWithdrawingId(appId);
+    try {
+      await withdrawApplicationApi(appId);
+      setToastMessage('Đã rút đơn ứng tuyển thành công');
+      await fetchApplications();
+    } catch (err: any) {
+      setToastMessage(err.message || 'Không thể rút đơn. Vui lòng thử lại');
+    } finally {
+      setWithdrawingId(null);
+    }
+  };
+
+  // Metrics
+  const totalCount = applications.length;
+  const screeningCount = applications.filter((a) => a.status === 'SUBMITTED' || a.status === 'SCREENING' || a.status === 'SHORTLISTED').length;
+  const interviewCount = applications.filter((a) => a.status === 'INTERVIEW_SCHEDULED' || a.status === 'INTERVIEWED').length;
+  const offerCount = applications.filter((a) => a.status === 'OFFERED' || a.status === 'HIRED').length;
+  const withdrawnCount = applications.filter((a) => a.status === 'WITHDRAWN' || a.status === 'REJECTED').length;
+
+  // Filtered List
+  const filteredApps = useMemo(() => {
+    return applications.filter((app) => {
+      // 1. Status Filter
+      if (activeFilter === 'screening' && !['SUBMITTED', 'SCREENING', 'SHORTLISTED'].includes(app.status)) return false;
+      if (activeFilter === 'interview' && !['INTERVIEW_SCHEDULED', 'INTERVIEWED'].includes(app.status)) return false;
+      if (activeFilter === 'offer' && !['OFFERED', 'HIRED'].includes(app.status)) return false;
+      if (activeFilter === 'withdrawn' && !['WITHDRAWN', 'REJECTED'].includes(app.status)) return false;
+
+      // 2. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const title = (app.jobPosting?.title || '').toLowerCase();
+        const dept = (app.jobPosting?.department || '').toLowerCase();
+        if (!title.includes(q) && !dept.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [applications, activeFilter, searchQuery]);
+
+  // Stage calculator
+  const getStageInfo = (status: string) => {
+    switch (status) {
+      case 'SUBMITTED':
+        return { stage: 1, label: '1/4: Đã nộp hồ sơ' };
+      case 'SCREENING':
+        return { stage: 2, label: '2/4: AI Sàng lọc' };
+      case 'SHORTLISTED':
+        return { stage: 2, label: '2/4: Đạt vòng CV' };
+      case 'INTERVIEW_SCHEDULED':
+      case 'INTERVIEWED':
+        return { stage: 3, label: '3/4: Vòng Phỏng vấn' };
+      case 'OFFERED':
+      case 'HIRED':
+        return { stage: 4, label: '4/4: Quyết định Tuyển dụng' };
+      case 'REJECTED':
+      case 'WITHDRAWN':
+      default:
+        return { stage: 0, label: 'Đã hoàn tất / Đóng' };
+    }
+  };
 
   return (
-    <RoleGuard allowedRoles={['CANDIDATE']}>
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-3xl mx-auto px-4 py-8 sm:px-6">
-          {/* Header */}
-          <div className="mb-6">
-            <nav className="text-xs text-slate-500 mb-3 flex items-center gap-1.5">
-              <Link href="/" className="hover:text-slate-700">Trang chủ</Link>
-              <span>/</span>
-              <span className="text-slate-800 font-medium">Hồ sơ ứng tuyển</span>
-            </nav>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">Lịch sử ứng tuyển</h1>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  {applications.length > 0
-                    ? `${applications.length} đơn ứng tuyển`
-                    : 'Theo dõi trạng thái các hồ sơ của bạn'}
-                </p>
+    <div className="w-full pt-16 bg-background flex-1 text-on-surface">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-space-md px-space-lg py-space-md bg-surface-container-lowest text-on-surface rounded-xl shadow-xl border border-outline-variant/30 animate-in fade-in slide-in-from-bottom-2">
+          <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <span className="material-symbols-outlined text-[18px]">info</span>
+          </div>
+          <span className="font-body-sm-medium text-body-sm-medium">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="p-1 text-on-surface-variant hover:text-on-surface">
+            <span className="material-symbols-outlined text-[16px]">close</span>
+          </button>
+        </div>
+      )}
+
+      <div className="w-full max-w-7xl mx-auto px-gutter-desktop py-space-xl flex flex-col gap-space-xl">
+        {/* Top Header Banner & Stats Overview */}
+        <div className="flex flex-col gap-space-lg">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+            <div className="flex flex-col gap-space-xs">
+              <div className="flex items-center gap-space-xs text-primary font-body-sm-medium text-body-sm-medium">
+                <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                <span>Cổng ứng viên tự phục vụ</span>
+                <span>•</span>
+                <span className="text-on-surface-variant font-normal">Cập nhật thời gian thực</span>
               </div>
+              <h1 className="font-headline-2xl text-headline-2xl text-on-surface tracking-tight font-bold">
+                Lịch sử & Tiến trình Ứng tuyển
+              </h1>
+              <p className="font-body-base text-body-base text-on-surface-variant max-w-3xl">
+                Theo dõi trực tiếp trạng thái duyệt hồ sơ, kết quả sàng lọc AI và tiến độ phỏng vấn của từng đơn tuyển dụng tại TalentPulse.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-space-sm self-start md:self-auto">
               <button
-                onClick={load}
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm"
+                type="button"
+                onClick={handleRefresh}
+                className="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-lowest text-on-surface font-body-sm-medium text-body-sm-medium hover:bg-surface-container-low transition-all shadow-sm active:scale-95 border border-outline-variant/30"
               >
-                <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Làm mới
+                <span
+                  className={`material-symbols-outlined text-[18px] text-primary transition-transform duration-500 ${
+                    isRefreshing ? 'animate-spin' : ''
+                  }`}
+                >
+                  refresh
+                </span>
+                <span>Làm mới dữ liệu</span>
               </button>
             </div>
           </div>
 
-          {/* Filter tabs */}
-          {applications.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 mb-5 scrollbar-hide">
-              {STATUS_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  id={`filter-${opt.value.toLowerCase()}`}
-                  onClick={() => setStatusFilter(opt.value)}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                    statusFilter === opt.value
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  {opt.label}
-                  {opt.value !== 'ALL' && (
-                    <span className="ml-1 opacity-70">
-                      ({applications.filter(a => a.status === opt.value).length})
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Content */}
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse">
-                  <div className="h-5 bg-slate-200 rounded w-2/3 mb-2" />
-                  <div className="h-3.5 bg-slate-100 rounded w-1/3 mb-4" />
-                  <div className="h-3 bg-slate-100 rounded w-1/2" />
+          {/* 4 Summary Metric Bento Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+            {/* Metric 1 */}
+            <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-between gap-space-sm group hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                  Tổng số đơn
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-[18px]">folder_shared</span>
                 </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-              <p className="text-sm text-red-600 font-medium mb-3">{error}</p>
-              <button
-                onClick={load}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-red-500 hover:bg-red-600"
-              >
-                Thử lại
-              </button>
-            </div>
-          ) : filtered.length === 0 ? (
-            applications.length > 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                <p className="text-sm">Không có đơn nào ở trạng thái này</p>
               </div>
-            ) : (
-              <EmptyState />
-            )
-          ) : (
-            <div className="space-y-4">
-              {filtered.map(app => (
-                <ApplicationCard key={app.id} app={app} onWithdraw={handleWithdraw} />
+              <div className="flex items-baseline gap-space-xs">
+                <span className="font-headline-2xl text-headline-2xl font-bold text-on-surface">{totalCount}</span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">vị trí đã nộp</span>
+              </div>
+              <div className="flex items-center gap-space-xs font-label-xs text-label-xs text-tertiary">
+                <span className="material-symbols-outlined text-[14px]">trending_up</span>
+                <span>Hoạt động ứng tuyển thực tế</span>
+              </div>
+            </div>
+
+            {/* Metric 2 */}
+            <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-between gap-space-sm group hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                  Đang sàng lọc AI
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+                  <span className="material-symbols-outlined text-[18px]">psychology</span>
+                </div>
+              </div>
+              <div className="flex items-baseline gap-space-xs">
+                <span className="font-headline-2xl text-headline-2xl font-bold text-secondary">
+                  {screeningCount}
+                </span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">đơn đang đối soát</span>
+              </div>
+              <div className="flex items-center gap-space-xs font-label-xs text-label-xs text-secondary">
+                <span className="material-symbols-outlined text-[14px]">bolt</span>
+                <span>FastAPI Microservice v2</span>
+              </div>
+            </div>
+
+            {/* Metric 3 */}
+            <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-between gap-space-sm group hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                  Đang phỏng vấn
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-[18px]">event_available</span>
+                </div>
+              </div>
+              <div className="flex items-baseline gap-space-xs">
+                <span className="font-headline-2xl text-headline-2xl font-bold text-primary">
+                  {interviewCount}
+                </span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">vị trí vào vòng trong</span>
+              </div>
+              <div className="flex items-center gap-space-xs font-label-xs text-label-xs text-primary font-medium">
+                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                <Link href="/candidate/interviews" className="hover:underline">
+                  Xem chi tiết lịch hẹn
+                </Link>
+              </div>
+            </div>
+
+            {/* Metric 4 */}
+            <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-between gap-space-sm group hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                  Rút đơn / Hoàn tất
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-outline">
+                  <span className="material-symbols-outlined text-[18px]">archive</span>
+                </div>
+              </div>
+              <div className="flex items-baseline gap-space-xs">
+                <span className="font-headline-2xl text-headline-2xl font-bold text-on-surface">
+                  {withdrawnCount}
+                </span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">hồ sơ đóng</span>
+              </div>
+              <div className="flex items-center gap-space-xs font-label-xs text-label-xs text-outline">
+                <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                <span>Dữ liệu đã lưu kho an toàn</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Transparency Callout Notice */}
+        <div className="bg-surface-container-low p-space-lg rounded-xl flex items-start gap-space-md shadow-sm border border-outline-variant/20">
+          <div className="w-9 h-9 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 shadow-sm">
+            <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+          </div>
+          <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-body-base-medium text-body-base-medium text-on-surface font-bold">
+                Cơ chế đối soát tự động TalentPulse AI
+              </span>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Hệ thống đối soát kỹ năng trong CV của bạn cùng tiêu chuẩn tuyển dụng chi tiết. Điểm khớp năng lực và phản hồi được phân tích tự động từ 24 đến 48 giờ.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Filters Toolstrip */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+          {/* Filter Tabs Group */}
+          <div className="flex items-center gap-1.5 p-1 bg-surface-container-high/60 rounded-xl overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveFilter('all')}
+              className={`px-space-md py-1.5 rounded-lg font-body-sm-medium text-body-sm-medium transition-all whitespace-nowrap ${
+                activeFilter === 'all'
+                  ? 'bg-surface-container-lowest text-primary shadow-sm font-semibold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Tất cả{' '}
+              <span className="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-primary-fixed text-on-primary-fixed font-bold">
+                {totalCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('screening')}
+              className={`px-space-md py-1.5 rounded-lg font-body-sm text-body-sm transition-all whitespace-nowrap ${
+                activeFilter === 'screening'
+                  ? 'bg-surface-container-lowest text-primary shadow-sm font-semibold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Đang sàng lọc{' '}
+              <span className="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-surface-container text-on-surface-variant font-medium">
+                {screeningCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('interview')}
+              className={`px-space-md py-1.5 rounded-lg font-body-sm text-body-sm transition-all whitespace-nowrap ${
+                activeFilter === 'interview'
+                  ? 'bg-surface-container-lowest text-primary shadow-sm font-semibold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Phỏng vấn{' '}
+              <span className="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-surface-container text-on-surface-variant font-medium">
+                {interviewCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('offer')}
+              className={`px-space-md py-1.5 rounded-lg font-body-sm text-body-sm transition-all whitespace-nowrap ${
+                activeFilter === 'offer'
+                  ? 'bg-surface-container-lowest text-primary shadow-sm font-semibold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Nhận Offer{' '}
+              <span className="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-surface-container text-on-surface-variant font-medium">
+                {offerCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('withdrawn')}
+              className={`px-space-md py-1.5 rounded-lg font-body-sm text-body-sm transition-all whitespace-nowrap ${
+                activeFilter === 'withdrawn'
+                  ? 'bg-surface-container-lowest text-primary shadow-sm font-semibold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Đã rút đơn{' '}
+              <span className="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-surface-container text-on-surface-variant font-medium">
+                {withdrawnCount}
+              </span>
+            </button>
+          </div>
+
+          {/* Quick Search Bar */}
+          <div className="relative w-full lg:w-80">
+            <span className="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">search</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm theo tên vị trí, phòng ban..."
+              className="w-full h-9 pl-9 pr-8 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary shadow-sm border border-outline-variant/30"
+            />
+          </div>
+        </div>
+
+        {/* Application Pipeline Cards Stack */}
+        <div className="flex flex-col gap-space-lg">
+          {isLoading ? (
+            <div className="space-y-4 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-44 bg-surface-container-low rounded-xl" />
               ))}
             </div>
+          ) : filteredApps.length === 0 ? (
+            <div className="bg-surface-container-lowest p-12 rounded-xl text-center space-y-3 border border-outline-variant/30">
+              <span className="material-symbols-outlined text-[48px] text-outline">folder_open</span>
+              <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface">Chưa có đơn ứng tuyển nào</h3>
+              <p className="font-body-base text-body-base text-on-surface-variant max-w-sm mx-auto">
+                Khám phá các vị trí tuyển dụng công nghệ cao và bắt đầu nộp hồ sơ ngay hôm nay!
+              </p>
+              <Link
+                href="/jobs"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-body-sm-medium text-body-sm-medium shadow-sm hover:bg-primary-container transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">search</span>
+                <span>Tìm việc làm ngay</span>
+              </Link>
+            </div>
+          ) : (
+            filteredApps.map((app) => {
+              const { stage, label } = getStageInfo(app.status);
+              const canWithdraw = WITHDRAWABLE.has(app.status);
+
+              return (
+                <div
+                  key={app.id}
+                  className="bg-surface-container-lowest rounded-xl p-space-lg md:p-space-xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-space-lg border border-outline-variant/30"
+                >
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-space-md">
+                    <div className="flex flex-col gap-space-xs">
+                      <div className="flex flex-wrap items-center gap-space-xs">
+                        <Link
+                          href={`/candidate/applications/${app.id}`}
+                          className="font-headline-lg text-headline-lg font-bold text-on-surface hover:text-primary transition-colors cursor-pointer"
+                        >
+                          {app.jobPosting?.title || 'Vị trí tuyển dụng'}
+                        </Link>
+
+                        {app.aiMatchScore !== null && app.aiMatchScore !== undefined && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-xs font-label-xs font-semibold">
+                            <span className="material-symbols-outlined text-[13px] text-secondary">verified</span>
+                            {app.aiMatchScore.toFixed(0)}% phù hợp AI
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-space-sm font-body-sm text-body-sm text-on-surface-variant">
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[16px]">apartment</span>
+                          {app.jobPosting?.department || 'Khối Kỹ thuật Công nghệ'}
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[16px]">location_on</span>
+                          {app.jobPosting?.location || 'Hà Nội'}
+                        </span>
+                        <span>•</span>
+                        <span className="px-2 py-0.5 rounded bg-surface-container text-on-surface font-body-sm-medium text-body-sm-medium text-[11px]">
+                          {app.jobPosting?.employmentType || 'FULL_TIME'}
+                        </span>
+                        <span>•</span>
+                        <span className="text-outline">
+                          Nộp ngày: {new Date(app.appliedAt).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-space-sm self-start">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface font-body-sm-medium text-body-sm-medium">
+                        <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                        {app.status === 'SUBMITTED'
+                          ? 'Đã nộp hồ sơ'
+                          : app.status === 'SCREENING'
+                          ? 'Đang sàng lọc AI'
+                          : app.status === 'SHORTLISTED'
+                          ? 'Đạt vòng CV'
+                          : app.status === 'INTERVIEW_SCHEDULED'
+                          ? 'Đã xếp lịch PV'
+                          : app.status === 'INTERVIEWED'
+                          ? 'Đã phỏng vấn'
+                          : app.status === 'OFFERED'
+                          ? 'Đã gửi Offer'
+                          : app.status === 'HIRED'
+                          ? 'Trúng tuyển'
+                          : app.status === 'WITHDRAWN'
+                          ? 'Đã rút đơn'
+                          : app.status === 'REJECTED'
+                          ? 'Không đạt'
+                          : app.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 4-Step Recruitment Process Visualizer */}
+                  <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-space-sm">
+                    <div className="flex items-center justify-between font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider mb-1">
+                      <span>Tiến trình tuyển dụng trực tiếp</span>
+                      <span className="text-primary font-bold">{label}</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {/* Step 1 */}
+                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-surface-container-lowest shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`font-label-xs text-label-xs font-semibold flex items-center gap-1 ${
+                              stage >= 1 ? 'text-tertiary' : 'text-on-surface-variant'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">
+                              {stage >= 1 ? 'check_circle' : 'radio_button_unchecked'}
+                            </span>
+                            1. Nộp hồ sơ
+                          </span>
+                        </div>
+                        <div
+                          className={`h-1.5 w-full rounded-full ${
+                            stage >= 1 ? 'bg-tertiary' : 'bg-surface-container'
+                          }`}
+                        />
+                      </div>
+
+                      {/* Step 2 */}
+                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-surface-container-lowest shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`font-label-xs text-label-xs font-semibold flex items-center gap-1 ${
+                              stage >= 2 ? 'text-primary' : 'text-on-surface-variant'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">
+                              {stage >= 2 ? 'psychology' : 'radio_button_unchecked'}
+                            </span>
+                            2. AI Sàng lọc
+                          </span>
+                        </div>
+                        <div
+                          className={`h-1.5 w-full rounded-full ${
+                            stage >= 2 ? 'bg-primary' : 'bg-surface-container'
+                          }`}
+                        />
+                      </div>
+
+                      {/* Step 3 */}
+                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-surface-container-lowest shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`font-label-xs text-label-xs font-semibold flex items-center gap-1 ${
+                              stage >= 3 ? 'text-secondary' : 'text-on-surface-variant'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">
+                              {stage >= 3 ? 'event_available' : 'radio_button_unchecked'}
+                            </span>
+                            3. Phỏng vấn
+                          </span>
+                        </div>
+                        <div
+                          className={`h-1.5 w-full rounded-full ${
+                            stage >= 3 ? 'bg-secondary' : 'bg-surface-container'
+                          }`}
+                        />
+                      </div>
+
+                      {/* Step 4 */}
+                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-surface-container-lowest shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`font-label-xs text-label-xs font-semibold flex items-center gap-1 ${
+                              stage >= 4 ? 'text-tertiary' : 'text-on-surface-variant'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">
+                              {stage >= 4 ? 'task_alt' : 'radio_button_unchecked'}
+                            </span>
+                            4. Quyết định
+                          </span>
+                        </div>
+                        <div
+                          className={`h-1.5 w-full rounded-full ${
+                            stage >= 4 ? 'bg-tertiary' : 'bg-surface-container'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs border-t border-outline-variant/20">
+                    <span className="font-label-xs text-label-xs text-on-surface-variant font-tabular-mono">
+                      Mã hồ sơ: #{app.id.slice(0, 8).toUpperCase()}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {canWithdraw && (
+                        <button
+                          type="button"
+                          disabled={withdrawingId === app.id}
+                          onClick={() => handleWithdraw(app.id, app.jobPosting?.title || 'đơn này')}
+                          className="px-3.5 py-1.5 rounded-lg border border-error/30 text-error hover:bg-error-container/30 text-body-sm font-body-sm-medium transition-colors disabled:opacity-50"
+                        >
+                          {withdrawingId === app.id ? 'Đang rút đơn...' : 'Rút đơn'}
+                        </button>
+                      )}
+
+                      <Link
+                        href={`/candidate/applications/${app.id}`}
+                        className="inline-flex items-center gap-1 px-4 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-body-sm-medium text-body-sm-medium transition-colors"
+                      >
+                        <span>Xem chi tiết hồ sơ & kết quả AI</span>
+                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function CandidateApplicationsPage() {
+  return (
+    <RoleGuard allowedRoles={['CANDIDATE', 'ADMIN']}>
+      <CandidateApplicationsContent />
     </RoleGuard>
   );
 }

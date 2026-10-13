@@ -216,22 +216,36 @@ export function HrSidebar({
         {/* User Card & Logout Footer */}
         <div className="p-space-md border-t border-outline-variant/40 bg-surface-container-lowest">
           <div className="flex items-center justify-between p-space-xs rounded-xl bg-surface-container-low/60 hover:bg-surface-container transition-colors">
-            <div className="flex items-center gap-space-sm min-w-0">
+            <Link
+              href="/hr/settings?tab=account"
+              onClick={onCloseMobile}
+              className="flex items-center gap-space-sm min-w-0 hover:opacity-80 transition-opacity cursor-pointer group"
+              title="Tài khoản HR & Đơn vị"
+            >
               <div className="relative flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-                </div>
+                {user?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.avatarUrl}
+                    alt={userDisplayName}
+                    className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/60"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                    <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+                  </div>
+                )}
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary ring-2 ring-surface-container-lowest" />
               </div>
               <div className="min-w-0">
-                <div className="font-body-sm-medium text-body-sm-medium text-on-surface truncate leading-tight font-semibold">
+                <div className="font-body-sm-medium text-body-sm-medium text-on-surface truncate leading-tight font-semibold group-hover:text-primary transition-colors">
                   {userDisplayName}
                 </div>
                 <div className="font-label-xs text-label-xs text-outline leading-tight">
                   {userRole} Lead & Talent Ops
                 </div>
               </div>
-            </div>
+            </Link>
 
             <div className="relative flex items-center gap-1">
               <button

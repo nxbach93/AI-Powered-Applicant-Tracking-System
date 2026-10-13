@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "primary-fixed-dim": "#b4c5ff", "on-tertiary-fixed": "#002114", "error": "#ba1a1a", "on-primary-fixed": "#00174b", "on-secondary-fixed-variant": "#3323cc", "secondary-container": "#645efb", "secondary-fixed": "#e2dfff", "surface-variant": "#d3e4fe", "surface-dim": "#cbdbf5", "on-secondary": "#ffffff", "primary-fixed": "#dbe1ff", "inverse-primary": "#b4c5ff", "on-surface-variant": "#434655", "primary-container": "#2563eb", "surface-container-lowest": "#ffffff", "surface-container": "#e5eeff", "surface-bright": "#f8f9ff", "tertiary-fixed-dim": "#68dba9", "secondary-fixed-dim": "#c3c0ff", "on-primary-container": "#eeefff", "on-secondary-fixed": "#0f0069", "on-secondary-container": "#fffbff", "background": "#f8f9ff", "on-tertiary": "#ffffff", "secondary": "#4b41e1", "on-surface": "#0b1c30", "tertiary-fixed": "#85f8c4", "primary": "#004ac6", "tertiary-container": "#007d57", "surface-container-low": "#eff4ff", "outline-variant": "#c3c6d7", "outline": "#737686", "surface-container-high": "#dce9ff", "surface-container-highest": "#d3e4fe", "on-error": "#ffffff", "tertiary": "#006243", "inverse-on-surface": "#eaf1ff", "inverse-surface": "#213145", "on-tertiary-fixed-variant": "#005137", "on-primary-fixed-variant": "#003ea8", "error-container": "#ffdad6", "on-error-container": "#93000a", "on-tertiary-container": "#bdffdc", "on-background": "#0b1c30", "surface-tint": "#0053db", "surface": "#f8f9ff", "on-primary": "#ffffff" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin-desktop": "2rem", "gutter": "1rem", "gutter-desktop": "1.5rem", "space-sm": "0.5rem", "space-md": "0.75rem", "margin": "1rem", "space-lg": "1rem", "space-xl": "1.5rem", "space-xs": "0.25rem" }, "fontFamily": { "body-sm": ["Inter"], "headline-lg": ["Inter"], "headline-xl": ["Inter"], "tabular-mono": ["Inter"], "label-sm": ["Inter"], "body-base-medium": ["Inter"], "label-xs": ["Inter"], "body-base": ["Inter"], "body-sm-medium": ["Inter"], "headline-2xl": ["Inter"] }, "fontSize": { "body-sm": ["13px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "tabular-mono": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500" }], "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-base-medium": ["14px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "500" }], "label-xs": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-base": ["14px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" }], "body-sm-medium": ["13px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "500" }], "headline-2xl": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-base text-on-surface antialiased min-h-screen flex flex-col"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-desktop mx-auto flex items-center justify-between gap-space-lg"><div class="flex items-center gap-space-xl"><a class="flex items-center gap-space-sm" data-path="trang-chu" href="#"><div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">neurology</span></div><div class="flex items-center gap-space-xs"><span class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">TalentPulse</span><span class="px-space-xs py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold tracking-wider uppercase border border-secondary-fixed-dim/40">AI</span></div></a><nav class="hidden lg:flex items-center gap-space-lg h-16" data-active-classes="text-primary font-body-base-medium border-b-2 border-primary"><a class="h-16 flex items-center px-space-xs font-body-base text-body-base text-on-surface-variant hover:text-on-surface transition-colors" data-path="trang-chu" href="#">Trang chủ</a><a class="h-16 flex items-center px-space-xs font-body-base text-body-base text-on-surface-variant hover:text-on-surface transition-colors" data-path="viec-lam" href="#">Việc làm</a><a class="h-16 flex items-center px-space-xs font-body-base text-body-base text-on-surface-variant hover:text-on-surface transition-colors" data-path="lich-phong-van" href="#">Lịch phỏng vấn</a><a class="h-16 flex items-center px-space-xs font-body-base text-body-base text-on-surface-variant hover:text-on-surface transition-colors" data-path="ho-so-ca-nhan" href="#">Hồ sơ cá nhân</a><a class="h-16 flex items-center px-space-xs font-body-base text-body-base text-on-surface-variant hover:text-on-surface transition-colors" data-path="don-ung-tuyen" href="#">Đơn ứng tuyển</a></nav></div><div class="flex items-center gap-space-md"><button aria-label="Thông báo" class="relative w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface-container-lowest"></span></button><div class="h-6 w-[1px] bg-outline-variant/40 hidden sm:block"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden sm:flex flex-col text-left"><div class="flex items-center gap-space-xs"><span class="font-body-sm-medium text-body-sm-medium text-on-surface leading-tight">17. Giang</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span></div><span class="font-label-xs text-label-xs text-secondary leading-tight uppercase font-bold tracking-wider">CANDIDATE</span></div></div><a class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-colors" data-path="dang-nhap" href="#"><span class="material-symbols-outlined text-[18px]">logout</span><span class="hidden md:inline font-body-sm-medium text-body-sm-medium">Đăng xuất</span></a></div></div></header><main class="w-full pt-16 bg-background flex-1"><div class="flex flex-col w-full">
+<!-- Interactive Toast Notification (Hidden by default) -->
+<div class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out flex items-center gap-space-md px-space-lg py-space-md bg-surface-container-lowest text-on-surface rounded-xl shadow-xl border border-outline-variant/30" id="toast-success">
+<div class="w-7 h-7 rounded-full bg-tertiary/10 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface">Cập nhật hồ sơ thành công!</span>
+<span class="font-label-xs text-label-xs text-on-surface-variant">Dữ liệu hồ sơ đã được đồng bộ hóa với hệ thống AI TalentPulse.</span>
+</div>
+<button class="p-1 text-on-surface-variant hover:text-on-surface" onclick="dismissToast()" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Workspace Container -->
+<div class="w-full max-w-7xl mx-auto px-gutter md:px-gutter-desktop py-space-xl">
+<!-- Top Context & Navigation Tabs -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md pb-space-lg">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm">
+<a class="hover:text-primary transition-colors" href="#">Trang chủ</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-body-sm-medium">Hồ sơ cá nhân &amp; Quản lý CV</span>
+</div>
+<!-- Jump/Anchor Quick Tabs -->
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant/20 self-start md:self-auto overflow-x-auto max-w-full">
+<a class="px-space-md py-1 rounded-lg text-primary font-body-sm-medium text-body-sm-medium bg-surface-container-lowest shadow-sm flex items-center gap-1.5 whitespace-nowrap" href="#section-cv">
+<span class="material-symbols-outlined text-[16px]">description</span>
+          Hồ sơ CV
+        </a>
+<a class="px-space-md py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors flex items-center gap-1.5 whitespace-nowrap" href="#section-personal">
+<span class="material-symbols-outlined text-[16px]">badge</span>
+          Thông tin cá nhân
+        </a>
+<a class="px-space-md py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors flex items-center gap-1.5 whitespace-nowrap" href="#section-skills">
+<span class="material-symbols-outlined text-[16px]">psychology</span>
+          Kỹ năng &amp; Ngoại ngữ
+        </a>
+<a class="px-space-md py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors flex items-center gap-1.5 whitespace-nowrap" href="#section-security">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+          Bảo mật
+        </a>
+</div>
+</div>
+<!-- 1. PROFILE HEADER CARD (Overview, Avatar & AI Completion Telemetry) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/30 mb-space-xl relative overflow-hidden">
+<!-- Decorative AI gradient accent top bar -->
+<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-secondary to-primary-container"></div>
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-xl pt-2">
+<!-- Candidate Identity Info -->
+<div class="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg">
+<!-- Avatar Frame -->
+<div class="relative group">
+<div class="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-headline-2xl text-headline-2xl font-bold shadow-inner overflow-hidden">
+<span>17</span>
+</div>
+<button class="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-on-primary shadow-md flex items-center justify-center hover:bg-primary-container transition-all" title="Đổi ảnh đại diện" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_camera</span>
+</button>
+</div>
+<!-- Text Details -->
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm flex-wrap">
+<h1 class="font-headline-2xl text-headline-2xl font-bold text-on-surface tracking-tight">Nguyễn Trường Giang</h1>
+<span class="inline-flex items-center gap-1 px-space-sm py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-xs font-label-xs font-semibold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[12px] text-secondary">verified</span>
+                ỨNG VIÊN XÁC THỰC
+              </span>
+</div>
+<div class="flex items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm mt-1 flex-wrap">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-outline">mail</span>
+                ntg12072005222@gmail.com
+              </span>
+<span class="hidden sm:inline text-outline-variant">•</span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-outline">location_on</span>
+                Cầu Giấy, Hà Nội
+              </span>
+<span class="hidden sm:inline text-outline-variant">•</span>
+<span class="flex items-center gap-1 text-tertiary font-body-sm-medium">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+                Đang tìm việc Backend Developer
+              </span>
+</div>
+</div>
+</div>
+<!-- Telemetry: Profile Completion Meter -->
+<div class="w-full lg:w-96 flex flex-col p-space-md bg-surface-container-low rounded-xl border border-outline-variant/20">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">auto_awesome</span>
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface">Độ hoàn thiện hồ sơ</span>
+</div>
+<span class="font-headline-lg text-headline-lg font-bold text-primary font-tabular-mono">85%</span>
+</div>
+<!-- Progress bar track -->
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden mb-2">
+<div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" style="width: 85%"></div>
+</div>
+<div class="flex items-start gap-1.5 text-on-surface-variant font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-[14px] text-error shrink-0 mt-0.5">info</span>
+<span>Gợi ý AI: Bổ sung <strong>chứng chỉ ngoại ngữ</strong> &amp; <strong>link Github</strong> để tăng 40% tỷ lệ phản hồi tuyển dụng.</span>
+</div>
+</div>
+</div>
+<!-- Action row inside header card -->
+<div class="mt-space-lg pt-space-md border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>
+          Hồ sơ công khai hiển thị với các nhà tuyển dụng hàng đầu qua TalentPulse AI
+        </div>
+<div class="flex items-center gap-space-sm">
+<button class="h-9 px-space-md rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-body-sm-medium text-body-sm-medium flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+            Xem trước hồ sơ
+          </button>
+<button class="h-9 px-space-lg rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors font-body-sm-medium text-body-sm-medium shadow-sm flex items-center gap-1.5" onclick="triggerProfileSave()" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+            Lưu thay đổi
+          </button>
+</div>
+</div>
+</div>
+<!-- MAIN TWO-COLUMN / MULTI-CARD WORKSPACE -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- LEFT PRIMARY WORKSPACE (8 cols) -->
+<div class="lg:col-span-8 flex flex-col gap-space-xl">
+<!-- SECTION 1: QUẢN LÝ HỒ SƠ CV CỦA BẠN (High Focus) -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/30 flex flex-col gap-space-lg" id="section-cv">
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">document_scanner</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Hồ sơ CV của bạn</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Tệp tài liệu phục vụ phân tích hồ sơ và ứng tuyển tự động</p>
+</div>
+</div>
+<span class="text-label-xs font-label-xs px-2 py-0.5 rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant/30">
+              Hỗ trợ PDF, DOCX • Tối đa 5MB
+            </span>
+</div>
+<!-- Existing Active CV Item Card -->
+<div class="p-space-lg bg-surface-container-low/70 rounded-xl border border-primary/20 relative group hover:bg-surface-container-low transition-all">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
+<!-- Left side with PDF badge and info -->
+<div class="flex items-start gap-space-md min-w-0">
+<div class="w-12 h-12 rounded-xl bg-error-container text-on-error-container flex flex-col items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">picture_as_pdf</span>
+<span class="text-[9px] font-bold tracking-wider leading-none mt-0.5">PDF</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-body-base-medium text-body-base-medium text-on-surface truncate max-w-xs md:max-w-md font-tabular-mono" title="cv_6f58ac87-4438-4659-b848-001db9f02c8f_1791877507512.pdf">
+                      cv_6f58ac87-4438-4659-b848-001db9f02c8f_1791877507512.pdf
+                    </span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-xs font-label-xs font-bold inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">auto_fix_high</span>
+                      Đã bóc tách AI
+                    </span>
+</div>
+<div class="flex items-center gap-space-md text-on-surface-variant font-label-sm text-label-sm mt-1">
+<span>Dung lượng: <strong class="text-on-surface font-tabular-mono">1.8 MB</strong></span>
+<span>•</span>
+<span>Cập nhật: <strong class="text-on-surface font-tabular-mono">13/10/2026</strong></span>
+<span>•</span>
+<span class="text-tertiary flex items-center gap-1 font-body-sm-medium">
+<span class="material-symbols-outlined text-[14px]">check</span>
+                      Sẵn sàng ứng tuyển
+                    </span>
+</div>
+</div>
+</div>
+<!-- Action button cluster -->
+<div class="flex items-center gap-space-xs shrink-0 self-end sm:self-center">
+<button class="h-8 px-space-md rounded-lg bg-surface-container-lowest text-primary hover:bg-primary hover:text-on-primary transition-all font-body-sm-medium text-body-sm-medium border border-outline-variant/30 flex items-center gap-1 shadow-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Xem</span>
+</button>
+<button class="h-8 px-space-md rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all font-body-sm-medium text-body-sm-medium border border-outline-variant/30 flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span class="hidden sm:inline">Tải về</span>
+</button>
+<button class="h-8 px-space-md rounded-lg bg-surface-container-lowest text-error hover:bg-error hover:text-on-error transition-all font-body-sm-medium text-body-sm-medium border border-error/20 flex items-center gap-1" onclick="confirmDeleteCV()" title="Xóa CV" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+<span class="hidden sm:inline">Xóa</span>
+</button>
+</div>
+</div>
+<!-- AI Extraction Insights Bar -->
+<div class="mt-space-md pt-space-sm border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-space-sm bg-surface-container-lowest/70 p-2.5 rounded-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">psychology_alt</span>
+<span class="font-body-sm text-body-sm text-on-surface">
+                  Trích xuất thành công: <strong>14 kỹ năng</strong>, <strong>3 mốc dự án</strong>, <strong>1 trường Đại học</strong>.
+                </span>
+</div>
+<button class="text-secondary hover:text-secondary-container font-label-sm text-label-sm font-semibold flex items-center gap-1" type="button">
+                Xem bảng tóm tắt AI
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Drag and Drop Upload Zone -->
+<div class="border-2 border-dashed border-outline-variant hover:border-primary/60 rounded-xl p-space-xl flex flex-col items-center justify-center text-center bg-surface-container-lowest/50 hover:bg-surface-container-low/40 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-space-sm group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[26px]">cloud_upload</span>
+</div>
+<p class="font-body-base-medium text-body-base-medium text-on-surface">
+              Kéo thả hoặc nhấn để chọn tệp <span class="text-primary font-semibold">PDF hoặc DOCX</span> mới
+            </p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-md">
+              Hệ thống AI sẽ tự động đọc kinh nghiệm, kỹ năng và đồng bộ hóa vào hồ sơ của bạn chỉ trong 3 giây.
+            </p>
+<div class="mt-space-md flex items-center gap-space-sm">
+<input accept=".pdf,.doc,.docx" class="hidden" id="cv-file-input" type="file"/>
+<button class="h-9 px-space-lg rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-body-sm-medium text-body-sm-medium border border-outline-variant/30 flex items-center gap-1.5" onclick="document.getElementById('cv-file-input').click()" type="button">
+<span class="material-symbols-outlined text-[16px]">folder_open</span>
+                Chọn tệp từ máy tính
+              </button>
+</div>
+</div>
+</section>
+<!-- SECTION 2: THÔNG TIN CÁ NHÂN CƠ BẢN (Editable Form) -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/30 flex flex-col gap-space-lg" id="section-personal">
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Thông tin cá nhân cơ bản</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Chi tiết lý lịch được hiển thị cho nhà tuyển dụng khi duyệt ứng viên</p>
+</div>
+</div>
+<span class="text-label-xs font-label-xs text-on-surface-variant flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+              Đã đồng bộ tự động từ CV
+            </span>
+</div>
+<!-- Form Fields Grid -->
+<form class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
+<!-- Họ và tên đệm -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="first-name">
+                Họ và tên đệm <span class="text-error">*</span>
+</label>
+<input class="h-10 px-space-md rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface transition-all" id="first-name" type="text" value="Nguyễn Trường"/>
+</div>
+<!-- Tên -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="last-name">
+                Tên <span class="text-error">*</span>
+</label>
+<input class="h-10 px-space-md rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface transition-all" id="last-name" type="text" value="Giang"/>
+</div>
+<!-- Số điện thoại -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="phone-number">
+                Số điện thoại liên lạc <span class="text-error">*</span>
+</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">call</span>
+<input class="h-10 pl-10 pr-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface font-tabular-mono transition-all" id="phone-number" type="tel" value="0987654321"/>
+</div>
+</div>
+<!-- Ngày sinh -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="birth-date">
+                Ngày sinh <span class="text-error">*</span>
+</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">calendar_today</span>
+<input class="h-10 pl-10 pr-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface font-tabular-mono transition-all" id="birth-date" type="date" value="2000-07-12"/>
+</div>
+</div>
+<!-- Địa chỉ hiện tại -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="address">
+                Địa chỉ hiện tại <span class="text-error">*</span>
+</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">home_pin</span>
+<input class="h-10 pl-10 pr-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface transition-all" id="address" type="text" value="Số 18, Ngõ 124 Doãn Kế Thiện, Mai Dịch, Cầu Giấy, Hà Nội"/>
+</div>
+</div>
+<!-- Học vấn / Bằng cấp -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="education">
+                Học vấn / Bằng cấp
+              </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">school</span>
+<input class="h-10 pl-10 pr-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface transition-all" id="education" type="text" value="Đại học Bách Khoa Hà Nội (Kỹ thuật Máy tính)"/>
+</div>
+</div>
+<!-- Số năm kinh nghiệm -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="experience-years">
+                Số năm kinh nghiệm
+              </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">work_history</span>
+<select class="h-10 pl-10 pr-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface appearance-none transition-all" id="experience-years">
+<option value="fresher">Chưa có kinh nghiệm / Fresher</option>
+<option value="1">1 năm</option>
+<option value="2">2 năm</option>
+<option selected="" value="3">3 năm kinh nghiệm</option>
+<option value="4">4 năm</option>
+<option value="5+">Trên 5 năm (Senior)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-[18px] text-outline pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Mức lương kỳ vọng -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="expected-salary">
+                Mức lương kỳ vọng (VNĐ/tháng)
+              </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">payments</span>
+<input class="h-10 pl-10 pr-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface font-tabular-mono transition-all" id="expected-salary" type="text" value="22,000,000 VNĐ"/>
+</div>
+</div>
+<!-- Đường dẫn ảnh đại diện -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center gap-1" for="avatar-url">
+                Đường dẫn liên kết cá nhân (LinkedIn/Github)
+              </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">link</span>
+<input class="h-10 pl-10 pr-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface transition-all" id="avatar-url" type="url" value="https://github.com/truonggiang-dev"/>
+</div>
+</div>
+<!-- Mục tiêu nghề nghiệp / Giới thiệu bản thân -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="font-body-sm-medium text-body-sm-medium text-on-surface flex items-center justify-between" for="bio-summary">
+<span>Mục tiêu nghề nghiệp &amp; Tóm tắt năng lực</span>
+<span class="text-label-xs font-label-xs text-on-surface-variant font-tabular-mono">245 / 500 ký tự</span>
+</label>
+<textarea class="p-space-md w-full rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface transition-all leading-relaxed" id="bio-summary" rows="4">Lập trình viên Backend với hơn 3 năm kinh nghiệm thực chiến phát triển kiến trúc hệ thống phân tán, xử lý tải cao. Thành thạo Java (Spring Boot), Node.js (NestJS), cơ sở dữ liệu quan hệ PostgreSQL và message broker Kafka. Định hướng trở thành Tech Lead trong các hệ thống Fintech / E-commerce quy mô lớn.</textarea>
+<div class="flex items-center gap-1 text-label-xs font-label-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary">tips_and_updates</span>
+                Đoạn giới thiệu tốt giúp thuật toán Matching của TalentPulse phân bổ các vị trí phù hợp nhất lên hàng đầu.
+              </div>
+</div>
+</form>
+</section>
+<!-- SECTION 3: KỸ NĂNG & CHUYÊN MÔN -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/30 flex flex-col gap-space-lg" id="section-skills">
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Kỹ năng &amp; Chuyên môn</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Các thẻ kỹ năng được sử dụng để tính điểm tương quan ứng tuyển (Match Score)</p>
+</div>
+</div>
+<button class="text-primary hover:text-primary-container font-label-sm text-label-sm font-semibold flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+              Thêm kỹ năng
+            </button>
+</div>
+<!-- Kỹ năng cốt lõi (Tag pills) -->
+<div class="flex flex-col gap-space-sm">
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface">Kỹ năng kỹ thuật cốt lõi (Backend &amp; DevOps)</span>
+<div class="flex flex-wrap gap-2 pt-1">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface text-body-sm font-body-sm-medium border border-outline-variant/30 group hover:border-primary">
+                Java
+                <span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-body-sm font-body-sm-medium border border-primary/20 group hover:border-primary">
+                Spring Boot
+                <span class="text-label-xs bg-primary text-on-primary px-1.5 py-0.2 rounded font-mono text-[10px]">95% Match</span>
+<span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface text-body-sm font-body-sm-medium border border-outline-variant/30 group hover:border-primary">
+                Node.js
+                <span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface text-body-sm font-body-sm-medium border border-outline-variant/30 group hover:border-primary">
+                PostgreSQL
+                <span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface text-body-sm font-body-sm-medium border border-outline-variant/30 group hover:border-primary">
+                Docker
+                <span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface text-body-sm font-body-sm-medium border border-outline-variant/30 group hover:border-primary">
+                Redis
+                <span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface text-body-sm font-body-sm-medium border border-outline-variant/30 group hover:border-primary">
+                RESTful API
+                <span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface text-body-sm font-body-sm-medium border border-outline-variant/30 group hover:border-primary">
+                Kafka
+                <span class="material-symbols-outlined text-[14px] text-outline group-hover:text-error cursor-pointer">close</span>
+</span>
+<button class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-dashed border-outline text-on-surface-variant hover:text-primary hover:border-primary text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+                Thêm thẻ mới
+              </button>
+</div>
+</div>
+<!-- Ngoại ngữ & Khả năng giao tiếp -->
+<div class="mt-space-sm pt-space-md border-t border-outline-variant/20 flex flex-col gap-space-sm">
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface">Ngoại ngữ &amp; Trình độ</span>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="p-space-md rounded-lg bg-surface-container-low border border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center font-bold text-primary font-tabular-mono text-label-sm">
+                    EN
+                  </div>
+<div class="flex flex-col">
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface">Tiếng Anh</span>
+<span class="font-label-xs text-label-xs text-on-surface-variant">IELTS 7.0 • Giao tiếp &amp; Đọc tài liệu thành thạo</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary p-1" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container-low/50 border border-dashed border-outline-variant/40 flex items-center justify-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span class="font-body-sm-medium text-body-sm-medium">Thêm ngoại ngữ (Nhật, Hàn, Trung...)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: BẢO MẬT TÀI KHOẢN & ĐỔI MẬT KHẨU -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg md:p-space-xl shadow-sm border border-outline-variant/30 flex flex-col gap-space-lg" id="section-security">
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">security</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Bảo mật tài khoản &amp; Đổi mật khẩu</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Quản trị phiên làm việc, email định danh và an toàn xác thực</p>
+</div>
+</div>
+</div>
+<!-- Thông tin hệ thống / Email không đổi -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg p-space-md bg-surface-container-low rounded-xl border border-outline-variant/20">
+<div class="flex flex-col gap-1">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider font-semibold">Địa chỉ Email định danh</span>
+<div class="flex items-center justify-between bg-surface-container-lowest px-3 py-2 rounded-lg border border-outline-variant/30">
+<span class="font-body-base-medium text-body-base-medium text-on-surface font-tabular-mono truncate">ntg12072005222@gmail.com</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-medium uppercase shrink-0">Cố định</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider font-semibold">Vai trò tài khoản (Role)</span>
+<div class="flex items-center justify-between bg-surface-container-lowest px-3 py-2 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed text-label-xs font-bold uppercase">CANDIDATE</span>
+<span class="font-body-sm text-body-sm text-on-surface">Ứng viên</span>
+</div>
+<span class="text-label-xs text-on-surface-variant">Do hệ thống quản lý</span>
+</div>
+</div>
+</div>
+<!-- Đổi mật khẩu Form -->
+<div class="flex flex-col gap-space-md">
+<h3 class="font-body-base-medium text-body-base-medium text-on-surface">Thay đổi mật khẩu đăng nhập</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm text-body-sm text-on-surface" for="current-pwd">Mật khẩu hiện tại</label>
+<input class="h-10 px-space-md rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface" id="current-pwd" placeholder="••••••••" type="password"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm text-body-sm text-on-surface" for="new-pwd">Mật khẩu mới</label>
+<input class="h-10 px-space-md rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface" id="new-pwd" placeholder="Ít nhất 8 ký tự" type="password"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-body-sm text-body-sm text-on-surface" for="confirm-pwd">Xác nhận mật khẩu mới</label>
+<input class="h-10 px-space-md rounded-lg bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none font-body-base text-body-base text-on-surface" id="confirm-pwd" placeholder="Nhập lại mật khẩu mới" type="password"/>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="text-label-xs font-label-xs text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary">check_circle</span>
+                Bảo vệ 2 lớp được kích hoạt tự động qua email định danh
+              </span>
+<button class="h-9 px-space-lg rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-body-sm-medium text-body-sm-medium border border-outline-variant/30 flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">key</span>
+                Cập nhật mật khẩu
+              </button>
+</div>
+</div>
+</section>
+</div>
+<!-- RIGHT WIDGET RAIL (4 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-space-xl">
+<!-- Widget: AI Application Readiness Card -->
+<div class="bg-gradient-to-br from-surface-container-lowest via-surface-container-low to-secondary-fixed/30 rounded-xl p-space-lg shadow-sm border border-secondary/20 flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-secondary text-on-secondary text-label-xs font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">neurology</span>
+              AI RADAR
+            </span>
+<span class="font-tabular-mono text-body-sm font-semibold text-secondary">Hợp chuẩn 92%</span>
+</div>
+<div>
+<h3 class="font-headline-lg text-headline-lg font-bold text-on-surface">Độ sẵn sàng ứng tuyển</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Dữ liệu của bạn được khớp với hơn <strong>120+ vị trí Backend</strong> đang mở tại Hà Nội và TP.HCM.
+            </p>
+</div>
+<!-- Radar Mini Visual Breakdown -->
+<div class="space-y-2 py-1">
+<div>
+<div class="flex justify-between text-label-xs font-label-xs mb-1">
+<span class="text-on-surface-variant">Chuyên môn Backend (Java/Node)</span>
+<span class="text-on-surface font-semibold font-tabular-mono">96%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 96%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-xs font-label-xs mb-1">
+<span class="text-on-surface-variant">Hạ tầng &amp; Cơ sở dữ liệu</span>
+<span class="text-on-surface font-semibold font-tabular-mono">88%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 88%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-xs font-label-xs mb-1">
+<span class="text-on-surface-variant">Ngoại ngữ &amp; Giao tiếp</span>
+<span class="text-on-surface font-semibold font-tabular-mono">82%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 82%"></div>
+</div>
+</div>
+</div>
+<a class="w-full py-2 px-3 rounded-lg bg-surface-container-lowest text-primary font-body-sm-medium text-body-sm-medium text-center border border-primary/20 hover:bg-primary hover:text-on-primary transition-all flex items-center justify-center gap-1.5 shadow-xs" href="#">
+<span class="material-symbols-outlined text-[16px]">work</span>
+            Khám phá 18 công việc phù hợp nhất
+          </a>
+</div>
+<!-- Widget: Lịch sử ứng tuyển nhanh -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-outline-variant/30 flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">history</span>
+<h3 class="font-headline-lg text-headline-lg font-bold text-on-surface">Lịch sử ứng tuyển</h3>
+</div>
+<a class="text-primary hover:text-primary-container font-label-sm text-label-sm font-semibold" href="#">Tất cả</a>
+</div>
+<div class="space-y-3">
+<!-- App 1 -->
+<div class="p-space-sm rounded-lg bg-surface-container-low/60 border border-outline-variant/20 flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface truncate">Senior Java Engineer</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-xs font-bold uppercase">Phỏng vấn</span>
+</div>
+<div class="flex items-center justify-between text-label-xs text-on-surface-variant font-tabular-mono">
+<span>VNG Corporation</span>
+<span>Hôm qua</span>
+</div>
+</div>
+<!-- App 2 -->
+<div class="p-space-sm rounded-lg bg-surface-container-low/60 border border-outline-variant/20 flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface truncate">Backend Microservices Dev</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-label-xs font-bold uppercase">Đã nộp hồ sơ</span>
+</div>
+<div class="flex items-center justify-between text-label-xs text-on-surface-variant font-tabular-mono">
+<span>FPT Software</span>
+<span>11/10/2026</span>
+</div>
+</div>
+</div>
+<a class="h-9 px-space-md rounded-lg bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-all font-body-sm-medium text-body-sm-medium flex items-center justify-between" href="#">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
+              Theo dõi tiến trình hồ sơ
+            </span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<!-- Widget: AI Recommendation Help Box -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-outline-variant/30 flex flex-col gap-space-sm">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined text-[20px]">lightbulb</span>
+<h4 class="font-body-base-medium text-body-base-medium font-semibold text-on-surface">Mẹo tối ưu hồ sơ CV</h4>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Hồ sơ có kèm số liệu định lượng (ví dụ: <em>"Tối ưu 40% độ trễ API", "Xử lý 10,000 QPS"</em>) thường đạt điểm đánh giá cao hơn 2.5 lần từ AI ATS của nhà tuyển dụng.
+          </p>
+</div>
+</div>
+</div>
+<!-- 6. STICKY SAVE BAR / DESKTOP BOTTOM ACTION BAR -->
+<div class="sticky bottom-4 z-40 mt-space-xl p-space-md bg-surface-container-lowest/95 backdrop-blur-md rounded-xl shadow-xl border border-outline-variant/30 flex items-center justify-between flex-wrap gap-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="w-3 h-3 rounded-full bg-tertiary animate-ping"></span>
+<span class="font-body-sm-medium text-body-sm-medium text-on-surface">Hồ sơ đã được lưu trữ an toàn lúc <strong class="font-tabular-mono">14:32</strong></span>
+<span class="hidden md:inline text-on-surface-variant font-label-sm text-label-sm">• Mọi thay đổi sẽ có hiệu lực tức thì trên hệ thống phỏng vấn</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="h-9 px-space-lg rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all font-body-sm-medium text-body-sm-medium border border-outline-variant/30" type="button">
+          Hủy thay đổi
+        </button>
+<button class="h-9 px-space-xl rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all font-body-sm-medium text-body-sm-medium shadow-md flex items-center gap-1.5" onclick="triggerProfileSave()" type="button">
+<span class="material-symbols-outlined text-[18px]">cloud_done</span>
+<span>Lưu thay đổi hồ sơ</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Inline Vanilla Script for Micro-interactions -->
+<script>
+    function triggerProfileSave() {
+      const toast = document.getElementById('toast-success');
+      if (toast) {
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        setTimeout(() => {
+          dismissToast();
+        }, 4000);
+      }
+    }
+
+    function dismissToast() {
+      const toast = document.getElementById('toast-success');
+      if (toast) {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }
+    }
+
+    function confirmDeleteCV() {
+      if (confirm('Bạn có chắc chắn muốn xóa tệp CV hiện tại? Hành động này sẽ yêu cầu bạn tải lên CV mới để nộp hồ sơ ứng tuyển.')) {
+        alert('Tệp CV đã được xóa. Vui lòng tải lên tệp mới.');
+      }
+    }
+  </script>
+</div></main><footer class="w-full bg-surface-container-lowest shadow-[0_-1px_6px_rgba(0,0,0,0.03)] py-space-xl mt-auto"><div class="w-full px-gutter-desktop mx-auto flex flex-col md:flex-row items-center justify-between gap-space-md text-on-surface-variant"><div class="flex items-center gap-space-sm"><div class="w-6 h-6 rounded-lg bg-primary flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[14px]">neurology</span></div><span class="font-body-sm-medium text-body-sm-medium text-on-surface">TalentPulse AI © 2025</span><span class="font-body-sm text-body-sm">• Nền tảng tuyển dụng thông minh cho ứng viên</span></div><div class="flex items-center gap-space-lg font-body-sm text-body-sm"><a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Trung tâm trợ giúp</a><a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Chính sách bảo mật</a><a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Điều khoản dịch vụ</a></div></div></footer></body></html>
