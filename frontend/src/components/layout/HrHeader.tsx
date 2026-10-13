@@ -50,7 +50,7 @@ export function HrHeader({ isCollapsed, onOpenMobile }: HrHeaderProps) {
 
           <nav className="hidden md:flex items-center gap-space-md text-on-surface-variant font-body-sm-medium text-body-sm-medium">
             <Link
-              href="/hr/applications"
+              href="/hr"
               className={`transition-colors ${
                 pathname === '/dashboard' || pathname === '/hr'
                   ? 'text-primary font-semibold'

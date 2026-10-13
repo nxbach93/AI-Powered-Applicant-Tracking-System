@@ -348,6 +348,23 @@ export class ApplicationController {
       return handleError(res, error);
     }
   }
+
+  /**
+   * GET /api/applications/hr/dashboard-stats
+   * HR xem số liệu tổng quan Dashboard (KPIs, Pipeline, Recent apps, Interviews)
+   */
+  async getDashboardStats(req: Request, res: Response) {
+    try {
+      const timeRange = (req.query.timeRange as string) || '7d';
+      const data = await applicationService.getDashboardStats(timeRange);
+      return res.status(200).json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
 }
 
 export default new ApplicationController();

@@ -90,6 +90,14 @@ router.get(
   (req, res) => applicationController.getHrJobsOverview(req, res)
 );
 
+// GET /api/applications/hr/dashboard-stats — Lấy số liệu tổng quan Dashboard cho HR
+router.get(
+  '/hr/dashboard-stats',
+  authenticateJWT,
+  authorizeRoles(UserRole.HR, UserRole.ADMIN),
+  (req, res) => applicationController.getDashboardStats(req, res)
+);
+
 // GET /api/applications/job/:jobId — HR xem danh sách ứng viên theo tin (hoặc jobId='all')
 router.get(
   '/job/:jobId',

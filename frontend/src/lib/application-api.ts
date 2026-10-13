@@ -399,3 +399,52 @@ export async function bulkSendEmailApi(payload: {
   }
   return res.data;
 }
+
+export interface HrDashboardStats {
+  timeRange: string;
+  kpis: {
+    openJobs: number;
+    newApplications: number;
+    avgAiScore: number;
+    avgTimeToHire: number;
+    hiredCount: number;
+  };
+  pipeline: {
+    totalInPipeline: number;
+    stages: Array<{
+      name: string;
+      count: number;
+      rate: string;
+      title: string;
+    }>;
+  };
+  recentApplications: Array<{
+    id: string;
+    candidateName: string;
+    avatarUrl: string | null;
+    jobTitle: string;
+    department: string | null;
+    aiMatchScore: number | null;
+    parsedSkills: string[];
+    appliedAt: string;
+    status: ApplicationStatus;
+  }>;
+  todayInterviews: Array<{
+    id: string;
+    candidateName: string;
+    jobTitle: string;
+    scheduledAt: string;
+    interviewerName: string;
+    meetingUrl: string | null;
+    location: string | null;
+    status: string;
+  }>;
+}
+
+export async function getDashboardStatsApi(timeRange: string = '7d'): Promise<HrDashboardStats> {
+  const res = await apiRequest<HrDashboardStats>(`/applications/hr/dashboard-stats?timeRange=${timeRange}`);
+  if (!res.success || !res.data) {
+    throw new Error(res.error?.message || 'Không thể tải dữ liệu Dashboard');
+  }
+  return res.data;
+}

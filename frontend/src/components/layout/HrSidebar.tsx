@@ -89,7 +89,7 @@ export function HrSidebar({
             </div>
             <nav className="space-y-1 mb-space-lg">
               <Link
-                href="/hr/applications"
+                href="/hr"
                 onClick={onCloseMobile}
                 className={`flex items-center gap-space-md px-space-sm py-2 rounded-xl transition-colors font-body-sm-medium text-body-sm-medium ${
                   pathname === '/dashboard' || pathname === '/hr'
