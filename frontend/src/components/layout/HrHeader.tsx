@@ -81,9 +81,9 @@ export function HrHeader({ isCollapsed, onOpenMobile }: HrHeaderProps) {
               Vị trí
             </Link>
             <Link
-              href="/hr/interviews"
+              href="/hr/screening"
               className={`transition-colors ${
-                pathname.startsWith('/hr/interviews')
+                pathname.startsWith('/hr/screening')
                   ? 'text-primary font-semibold'
                   : 'hover:text-on-surface'
               }`}

@@ -968,7 +968,15 @@ export class ApplicationService {
 
       matchScore = typeof aiResponse.match_score === 'number' ? Math.round(aiResponse.match_score * 100) / 100 : null;
       parsedSkills = Array.isArray(aiResponse.parsed_skills) ? aiResponse.parsed_skills : [];
-      summary = typeof aiResponse.summary === 'string' ? aiResponse.summary : '';
+      summary = JSON.stringify({
+        summary: typeof aiResponse.summary === 'string' ? aiResponse.summary : '',
+        score_breakdown: aiResponse.score_breakdown || null,
+        matched_skills: Array.isArray(aiResponse.matched_skills) ? aiResponse.matched_skills : [],
+        missing_skills: Array.isArray(aiResponse.missing_skills) ? aiResponse.missing_skills : [],
+        warnings: Array.isArray(aiResponse.warnings) ? aiResponse.warnings : [],
+        experience_years: aiResponse.experience_years ?? null,
+        experience_gap: aiResponse.experience_gap ?? null,
+      });
     } else {
       // Ưu tiên 2: Phân tích qua endpoint JSON /api/v1/match-cv (khi không có tệp đĩa vật lý)
       const existingSkills = Array.isArray(app.parsedSkills)
@@ -1044,7 +1052,15 @@ export class ApplicationService {
 
       matchScore = typeof aiResponse.match_score === 'number' ? Math.round(aiResponse.match_score * 100) / 100 : null;
       parsedSkills = Array.isArray(aiResponse.parsed_skills) ? aiResponse.parsed_skills : existingSkills;
-      summary = typeof aiResponse.summary === 'string' ? aiResponse.summary : '';
+      summary = JSON.stringify({
+        summary: typeof aiResponse.summary === 'string' ? aiResponse.summary : '',
+        score_breakdown: aiResponse.score_breakdown || null,
+        matched_skills: Array.isArray(aiResponse.matched_skills) ? aiResponse.matched_skills : [],
+        missing_skills: Array.isArray(aiResponse.missing_skills) ? aiResponse.missing_skills : [],
+        warnings: Array.isArray(aiResponse.warnings) ? aiResponse.warnings : [],
+        experience_years: aiResponse.experience_years ?? null,
+        experience_gap: aiResponse.experience_gap ?? null,
+      });
     }
 
     // Cập nhật kết quả vào database

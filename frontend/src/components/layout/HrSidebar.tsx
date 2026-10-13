@@ -142,12 +142,18 @@ export function HrSidebar({
               </Link>
 
               <Link
-                href="/hr/applications"
+                href="/hr/screening"
                 onClick={onCloseMobile}
-                className="flex items-center justify-between px-space-sm py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-sm-medium text-body-sm-medium"
+                className={`flex items-center justify-between px-space-sm py-2 rounded-xl transition-colors font-body-sm-medium text-body-sm-medium ${
+                  pathname.startsWith('/hr/screening')
+                    ? 'bg-primary-container text-on-primary-container font-semibold'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                }`}
               >
                 <div className="flex items-center gap-space-md">
-                  <span className="material-symbols-outlined text-[20px] text-secondary">
+                  <span className={`material-symbols-outlined text-[20px] ${
+                    pathname.startsWith('/hr/screening') ? 'text-on-primary-container' : 'text-secondary'
+                  }`}>
                     auto_awesome
                   </span>
                   <span>Sàng lọc AI</span>
