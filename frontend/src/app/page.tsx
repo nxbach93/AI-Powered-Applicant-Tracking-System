@@ -1,11 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
 export default function HomePage() {
+  const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
+
+  // Khi HR hoặc Admin vào trang chủ chung, tự động chuyển về Tổng quan HR
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user && (user.role === 'HR' || user.role === 'ADMIN')) {
+      router.replace('/hr');
+    }
+  }, [isLoading, isAuthenticated, user, router]);
 
   const getRoleDetails = (role?: string) => {
     switch (role) {

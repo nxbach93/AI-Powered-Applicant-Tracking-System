@@ -580,14 +580,21 @@ export class InterviewService {
       }
     });
 
-    // Nhóm theo các cột chính của Pipeline
+    // Nhóm theo 6 cột chính của Pipeline (ánh xạ toàn bộ 9 trạng thái)
     const columns = {
-      SHORTLISTED: applications.filter(a => a.status === ApplicationStatus.SHORTLISTED),
+      SHORTLISTED: applications.filter(a =>
+        a.status === ApplicationStatus.SHORTLISTED ||
+        a.status === ApplicationStatus.SCREENING ||
+        a.status === ApplicationStatus.SUBMITTED
+      ),
       INTERVIEW_SCHEDULED: applications.filter(a => a.status === ApplicationStatus.INTERVIEW_SCHEDULED),
       INTERVIEWED: applications.filter(a => a.status === ApplicationStatus.INTERVIEWED),
       OFFERED: applications.filter(a => a.status === ApplicationStatus.OFFERED),
       HIRED: applications.filter(a => a.status === ApplicationStatus.HIRED),
-      REJECTED: applications.filter(a => a.status === ApplicationStatus.REJECTED)
+      REJECTED: applications.filter(a =>
+        a.status === ApplicationStatus.REJECTED ||
+        a.status === ApplicationStatus.WITHDRAWN
+      )
     };
 
     return {

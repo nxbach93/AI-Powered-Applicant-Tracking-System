@@ -8,7 +8,7 @@ import { useAuth, User } from '@/lib/auth-context';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user, login, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const redirectTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [formData, setFormData] = useState({
@@ -31,12 +31,16 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Nếu người dùng đã đăng nhập từ trước, điều hướng về Trang chủ, tránh hiển thị form đăng nhập
+  // Nếu người dùng đã đăng nhập từ trước, điều hướng theo vai trò (HR/ADMIN về /hr, Candidate về /)
   useEffect(() => {
-    if (!isAuthLoading && isAuthenticated) {
-      router.replace('/');
+    if (!isAuthLoading && isAuthenticated && user) {
+      if (user.role === 'HR' || user.role === 'ADMIN') {
+        router.replace('/hr');
+      } else {
+        router.replace('/');
+      }
     }
-  }, [isAuthLoading, isAuthenticated, router]);
+  }, [isAuthLoading, isAuthenticated, user, router]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -99,11 +103,15 @@ export default function LoginPage() {
         // Hiển thị thông báo thành công ngắn
         setSuccessMessage('Đăng nhập thành công! Đang chuyển hướng...');
 
-        // Điều hướng nhanh chóng và xóa thông báo khi bắt đầu chuyển trang
+        // Điều hướng nhanh chóng theo vai trò của người dùng
         redirectTimerRef.current = setTimeout(() => {
           setSuccessMessage(null);
-          router.replace('/');
-        }, 800);
+          if (user.role === 'HR' || user.role === 'ADMIN') {
+            router.replace('/hr');
+          } else {
+            router.replace('/');
+          }
+        }, 600);
       } else {
         if (res.error?.details && res.error.details.length > 0) {
           const backendFieldErrors: Record<string, string> = {};

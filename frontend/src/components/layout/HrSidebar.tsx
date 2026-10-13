@@ -194,11 +194,19 @@ export function HrSidebar({
               </Link>
 
               <Link
-                href="/profile"
+                href="/hr/settings"
                 onClick={onCloseMobile}
-                className="flex items-center gap-space-md px-space-sm py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-sm-medium text-body-sm-medium"
+                className={`flex items-center gap-space-md px-space-sm py-2 rounded-xl transition-colors font-body-sm-medium text-body-sm-medium ${
+                  pathname.startsWith('/hr/settings')
+                    ? 'bg-primary-container text-on-primary-container font-semibold'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                }`}
               >
-                <span className="material-symbols-outlined text-[20px]">settings</span>
+                <span className={`material-symbols-outlined text-[20px] ${
+                  pathname.startsWith('/hr/settings') ? 'text-on-primary-container' : 'text-outline'
+                }`}>
+                  settings
+                </span>
                 <span>Cài đặt & Tiêu chí AI</span>
               </Link>
             </nav>

@@ -13,7 +13,12 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Không hiển thị Navbar trên các trang xác thực hoặc phân hệ HR/Dashboard (sử dụng Enterprise HrLayout riêng)
-  if (pathname.startsWith('/auth/') || pathname.startsWith('/hr') || pathname.startsWith('/dashboard')) {
+  if (
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/hr') ||
+    pathname.startsWith('/dashboard') ||
+    ((user?.role === 'HR' || user?.role === 'ADMIN') && pathname === '/')
+  ) {
     return null;
   }
 
