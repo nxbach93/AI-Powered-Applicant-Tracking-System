@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
+import emailService from './email.service';
 import prisma from '../lib/prisma';
 import { UserRole, ApplicationStatus } from '@prisma/client';
 
@@ -19,6 +20,7 @@ const WITHDRAWABLE_STATUSES: ApplicationStatus[] = [
 const HR_ALLOWED_STATUS_TRANSITIONS: ApplicationStatus[] = [
   ApplicationStatus.SCREENING,
   ApplicationStatus.SHORTLISTED,
+  ApplicationStatus.INTERVIEW_SCHEDULED,
   ApplicationStatus.INTERVIEWED,
   ApplicationStatus.OFFERED,
   ApplicationStatus.HIRED,
@@ -425,6 +427,8 @@ export class ApplicationService {
       sortBy?: string;
       order?: string;
       minScore?: number;
+      minExp?: number;
+      scoreTier?: string;
       page?: number;
       limit?: number;
       search?: string;
@@ -465,6 +469,25 @@ export class ApplicationService {
       where.aiMatchScore = { gte: query.minScore };
     }
 
+    if (query.minExp !== undefined && !isNaN(query.minExp)) {
+      where.candidateProfile = {
+        ...(where.candidateProfile || {}),
+        experienceYears: { gte: query.minExp }
+      };
+    }
+
+    if (query.scoreTier) {
+      if (query.scoreTier === 'HIGH') {
+        where.aiMatchScore = { gte: 85 };
+      } else if (query.scoreTier === 'POTENTIAL') {
+        where.aiMatchScore = { gte: 70, lt: 85 };
+      } else if (query.scoreTier === 'LOW') {
+        where.aiMatchScore = { lt: 70 };
+      } else if (query.scoreTier === 'UNSCORED') {
+        where.aiMatchScore = null;
+      }
+    }
+
     // Tìm kiếm theo tên ứng viên, email hoặc tiêu đề công việc
     if (query.search && query.search.trim()) {
       const searchTerm = query.search.trim();
@@ -483,6 +506,11 @@ export class ApplicationService {
         {
           jobPosting: {
             title: { contains: searchTerm }
+          }
+        },
+        {
+          candidateProfile: {
+            summary: { contains: searchTerm }
           }
         }
       ];
@@ -832,6 +860,315 @@ export class ApplicationService {
     } catch (err) {
       console.warn(`[ApplicationService] Không thể xóa tệp vật lý tại ${filePath}:`, err);
     }
+  }
+
+  /**
+   * HR kích hoạt đánh giá lại AI cho 1 hồ sơ ứng viên
+   */
+  async rescreenApplication(applicationId: string) {
+    const app = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        candidateProfile: {
+          include: {
+            user: true
+          }
+        },
+        jobPosting: true
+      }
+    });
+
+    if (!app) {
+      throw new AppError('Đơn ứng tuyển không tồn tại', 404, 'NOT_FOUND');
+    }
+
+    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    const cvPath = app.candidateProfile.cvFileUrl
+      ? path.join(process.cwd(), app.candidateProfile.cvFileUrl)
+      : null;
+
+    let matchScore: number | null = null;
+    let parsedSkills: string[] = [];
+    let summary: string = '';
+
+    // Ưu tiên 1: Nếu tệp CV vật lý tồn tại trên đĩa, gửi sang /api/v1/analyze-cv (multipart)
+    if (cvPath && fs.existsSync(cvPath)) {
+      const fileContent = fs.readFileSync(cvPath);
+      const boundary = `---ATS_BOUNDARY_${Date.now()}`;
+      const filename = path.basename(cvPath);
+      const ext = path.extname(filename).toLowerCase();
+      const mimeType = ext === '.pdf' ? 'application/pdf'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+      const parts: Buffer[] = [];
+      const addField = (name: string, value: string) => {
+        parts.push(Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`
+        ));
+      };
+
+      addField('jd_text', `${app.jobPosting.title}\n\n${app.jobPosting.description}\n\n${app.jobPosting.requirements || ''}`);
+      addField('skill_weight', '0.5');
+      addField('exp_weight', '0.3');
+      addField('semantic_weight', '0.2');
+
+      parts.push(Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="cv_file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`
+      ));
+      parts.push(fileContent);
+      parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+
+      const body = Buffer.concat(parts);
+
+      const aiResponse = await new Promise<any>((resolve, reject) => {
+        const urlObj = new URL(`${aiServiceUrl}/api/v1/analyze-cv`);
+        const transport = urlObj.protocol === 'https:' ? https : http;
+
+        const timeout = setTimeout(() => {
+          reject(new AppError('AI Service phản hồi quá thời gian quy định (Timeout 30s)', 504, 'AI_TIMEOUT'));
+        }, 30000);
+
+        const req = transport.request(
+          {
+            hostname: urlObj.hostname,
+            port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+            path: urlObj.pathname,
+            method: 'POST',
+            headers: {
+              'Content-Type': `multipart/form-data; boundary=${boundary}`,
+              'Content-Length': body.length
+            }
+          },
+          (res) => {
+            clearTimeout(timeout);
+            let rawData = '';
+            res.on('data', chunk => rawData += chunk);
+            res.on('end', () => {
+              try {
+                if (res.statusCode === 200) {
+                  resolve(JSON.parse(rawData));
+                } else {
+                  reject(new AppError(`AI Service trả về lỗi mã ${res.statusCode}`, 502, 'AI_SERVICE_ERROR'));
+                }
+              } catch (e) {
+                reject(new AppError('Không thể giải mã dữ liệu trả về từ AI Service', 502, 'AI_PARSE_ERROR'));
+              }
+            });
+          }
+        );
+
+        req.on('error', (err) => {
+          clearTimeout(timeout);
+          reject(new AppError(`Không thể kết nối tới AI Service: ${err.message}`, 503, 'AI_SERVICE_UNAVAILABLE'));
+        });
+
+        req.write(body);
+        req.end();
+      });
+
+      matchScore = typeof aiResponse.match_score === 'number' ? Math.round(aiResponse.match_score * 100) / 100 : null;
+      parsedSkills = Array.isArray(aiResponse.parsed_skills) ? aiResponse.parsed_skills : [];
+      summary = typeof aiResponse.summary === 'string' ? aiResponse.summary : '';
+    } else {
+      // Ưu tiên 2: Phân tích qua endpoint JSON /api/v1/match-cv (khi không có tệp đĩa vật lý)
+      const existingSkills = Array.isArray(app.parsedSkills)
+        ? (app.parsedSkills as string[])
+        : (Array.isArray(app.candidateProfile.parsedSkills) ? (app.candidateProfile.parsedSkills as string[]) : ['Communication', 'Teamwork']);
+
+      const payload = JSON.stringify({
+        jd_data: {
+          title: app.jobPosting.title,
+          description: `${app.jobPosting.description}\n\n${app.jobPosting.requirements || ''}`,
+          requirements: app.jobPosting.requirements || '',
+          required_skills: existingSkills,
+          min_experience_years: app.candidateProfile.experienceYears || 1
+        },
+        cv_data: {
+          raw_text: `${app.candidateProfile.user.firstName} ${app.candidateProfile.user.lastName}\n${app.candidateProfile.summary || ''}\n${app.coverLetter || ''}`,
+          skills: existingSkills,
+          experience_years: app.candidateProfile.experienceYears || 1,
+          education: app.candidateProfile.education || 'Đại học'
+        },
+        weights: {
+          skill_weight: 0.5,
+          exp_weight: 0.3,
+          semantic_weight: 0.2
+        }
+      });
+
+      const aiResponse = await new Promise<any>((resolve, reject) => {
+        const urlObj = new URL(`${aiServiceUrl}/api/v1/match-cv`);
+        const transport = urlObj.protocol === 'https:' ? https : http;
+
+        const timeout = setTimeout(() => {
+          reject(new AppError('AI Service phản hồi quá thời gian quy định (Timeout 30s)', 504, 'AI_TIMEOUT'));
+        }, 30000);
+
+        const req = transport.request(
+          {
+            hostname: urlObj.hostname,
+            port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+            path: urlObj.pathname,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(payload)
+            }
+          },
+          (res) => {
+            clearTimeout(timeout);
+            let rawData = '';
+            res.on('data', chunk => rawData += chunk);
+            res.on('end', () => {
+              try {
+                if (res.statusCode === 200) {
+                  resolve(JSON.parse(rawData));
+                } else {
+                  reject(new AppError(`AI Service trả về lỗi mã ${res.statusCode}`, 502, 'AI_SERVICE_ERROR'));
+                }
+              } catch (e) {
+                reject(new AppError('Không thể giải mã dữ liệu JSON từ AI Service', 502, 'AI_PARSE_ERROR'));
+              }
+            });
+          }
+        );
+
+        req.on('error', (err) => {
+          clearTimeout(timeout);
+          reject(new AppError(`Không thể kết nối tới AI Service: ${err.message}`, 503, 'AI_SERVICE_UNAVAILABLE'));
+        });
+
+        req.write(payload);
+        req.end();
+      });
+
+      matchScore = typeof aiResponse.match_score === 'number' ? Math.round(aiResponse.match_score * 100) / 100 : null;
+      parsedSkills = Array.isArray(aiResponse.parsed_skills) ? aiResponse.parsed_skills : existingSkills;
+      summary = typeof aiResponse.summary === 'string' ? aiResponse.summary : '';
+    }
+
+    // Cập nhật kết quả vào database
+    const updated = await prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        aiMatchScore: matchScore,
+        parsedSkills: parsedSkills.length > 0 ? parsedSkills : undefined,
+        aiAnalysisSummary: summary || undefined,
+        status: app.status === ApplicationStatus.SUBMITTED ? ApplicationStatus.SCREENING : app.status
+      }
+    });
+
+    return {
+      applicationId: updated.id,
+      aiMatchScore: updated.aiMatchScore,
+      parsedSkills: updated.parsedSkills,
+      aiAnalysisSummary: updated.aiAnalysisSummary,
+      status: updated.status,
+      updatedAt: updated.updatedAt
+    };
+  }
+
+  /**
+   * Sàng lọc AI hàng loạt cho danh sách hồ sơ
+   */
+  async batchRescreenApplications(applicationIds: string[]) {
+    if (!applicationIds || applicationIds.length === 0) {
+      throw new AppError('Danh sách applicationIds không được để trống', 400, 'VALIDATION_ERROR');
+    }
+
+    const results: Array<{ id: string; success: boolean; score?: number | null; error?: string }> = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const id of applicationIds) {
+      try {
+        const res = await this.rescreenApplication(id);
+        results.push({ id, success: true, score: res.aiMatchScore });
+        successCount++;
+      } catch (err: any) {
+        results.push({ id, success: false, error: err.message || 'Lỗi phân tích AI' });
+        failedCount++;
+      }
+    }
+
+    return {
+      total: applicationIds.length,
+      successCount,
+      failedCount,
+      results
+    };
+  }
+
+  /**
+   * Gửi email hàng loạt tới các ứng viên được chọn
+   */
+  async bulkSendEmail(applicationIds: string[], subject: string, message: string) {
+    if (!applicationIds || applicationIds.length === 0) {
+      throw new AppError('Danh sách applicationIds không được để trống', 400, 'VALIDATION_ERROR');
+    }
+    if (!subject || !subject.trim()) {
+      throw new AppError('Tiêu đề email không được để trống', 400, 'VALIDATION_ERROR');
+    }
+    if (!message || !message.trim()) {
+      throw new AppError('Nội dung email không được để trống', 400, 'VALIDATION_ERROR');
+    }
+
+    const applications = await prisma.application.findMany({
+      where: { id: { in: applicationIds } },
+      include: {
+        candidateProfile: {
+          include: {
+            user: { select: { firstName: true, lastName: true, email: true } }
+          }
+        },
+        jobPosting: { select: { title: true } }
+      }
+    });
+
+    const details: Array<{ id: string; email: string; success: boolean; error?: string }> = [];
+    let sentCount = 0;
+    let failedCount = 0;
+
+    for (const app of applications) {
+      const email = app.candidateProfile.user.email;
+      const fullName = `${app.candidateProfile.user.firstName} ${app.candidateProfile.user.lastName}`.trim();
+      const jobTitle = app.jobPosting.title;
+
+      const personalizedHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="color: #2563eb; margin: 0; font-size: 22px;">TalentPulse ATS</h2>
+            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Thông báo từ Bộ phận Tuyển dụng</p>
+          </div>
+          <div style="color: #1e293b; font-size: 15px; line-height: 1.6;">
+            <p>Kính gửi <strong>${fullName}</strong>,</p>
+            <p>Liên quan đến vị trí ứng tuyển: <strong>${jobTitle}</strong>,</p>
+            <div style="margin: 20px 0; padding: 16px; background-color: #f8fafc; border-left: 4px solid #2563eb; border-radius: 4px; white-space: pre-wrap;">${message.replace(/{fullName}/g, fullName).replace(/{jobTitle}/g, jobTitle)}</div>
+            <p>Trân trọng,<br/><strong>Bộ phận Tuyển dụng</strong></p>
+          </div>
+        </div>
+      `;
+
+      try {
+        await emailService.sendMail({
+          to: email,
+          subject: subject.replace(/{fullName}/g, fullName).replace(/{jobTitle}/g, jobTitle),
+          html: personalizedHtml
+        });
+        details.push({ id: app.id, email, success: true });
+        sentCount++;
+      } catch (err: any) {
+        details.push({ id: app.id, email, success: false, error: err.message || 'Lỗi gửi email' });
+        failedCount++;
+      }
+    }
+
+    return {
+      total: applicationIds.length,
+      sentCount,
+      failedCount,
+      details
+    };
   }
 }
 

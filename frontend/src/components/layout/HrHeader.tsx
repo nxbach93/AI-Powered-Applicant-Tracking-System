@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
 interface HrHeaderProps {
@@ -12,144 +12,131 @@ interface HrHeaderProps {
 
 export function HrHeader({ isCollapsed, onOpenMobile }: HrHeaderProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    router.replace('/auth/login');
-  };
-
-  // Tính toán Breadcrumbs thân thiện dựa trên pathname thực tế
-  const getBreadcrumbs = () => {
-    if (pathname.startsWith('/dashboard/jobs/create')) {
-      return [
-        { label: 'Tin tuyển dụng', href: '/dashboard/jobs' },
-        { label: 'Tạo tin mới', href: '#' },
-      ];
-    }
-    if (pathname.startsWith('/dashboard/jobs')) {
-      return [
-        { label: 'Quản lý tuyển dụng', href: '/dashboard/jobs' },
-        { label: 'Danh sách tin', href: '/dashboard/jobs' },
-      ];
-    }
-    if (pathname.startsWith('/hr/applications/') && pathname !== '/hr/applications') {
-      return [
-        { label: 'Ứng viên', href: '/hr/applications' },
-        { label: 'Chi tiết hồ sơ & AI Match', href: '#' },
-      ];
-    }
-    if (pathname.startsWith('/hr/applications')) {
-      return [
-        { label: 'Quản lý ứng viên', href: '/hr/applications' },
-        { label: 'Danh sách hồ sơ', href: '/hr/applications' },
-      ];
-    }
-    if (pathname.startsWith('/hr/interviews')) {
-      return [
-        { label: 'Tuyển dụng', href: '/dashboard/jobs' },
-        { label: 'Lịch phỏng vấn', href: '/hr/interviews' },
-      ];
-    }
-    if (pathname.startsWith('/hr/workflow')) {
-      return [
-        { label: 'Tuyển dụng', href: '/dashboard/jobs' },
-        { label: 'Tiến trình tuyển dụng', href: '/hr/workflow' },
-      ];
-    }
-    return [
-      { label: 'HR Workspace', href: '/hr/applications' },
-      { label: 'Tổng quan', href: '#' },
-    ];
-  };
-
-  const breadcrumbs = getBreadcrumbs();
   const userDisplayName = user
     ? `${user.lastName || ''} ${user.firstName || ''}`.trim() || user.email.split('@')[0]
-    : 'Chuyên viên HR';
-  const userRole = user?.role || 'HR';
+    : 'TP';
+  const userInitials = userDisplayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(-2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('') || 'HR';
 
   return (
-    <header
-      className={`fixed top-0 right-0 h-16 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200/80 transition-all duration-200 ${
-        isCollapsed ? 'md:left-[72px]' : 'md:left-64'
-      } left-0`}
-    >
-      <div className="h-full px-4 sm:px-6 flex items-center justify-between gap-4">
-        {/* Left: Mobile hamburger & Breadcrumbs */}
-        <div className="flex items-center gap-3 min-w-0">
+    <header className="fixed top-0 left-0 md:left-64 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md z-40 border-b border-outline-variant/50 shadow-[0_1px_8px_rgba(0,0,0,0.02)]">
+      <div className="h-16 w-full px-gutter-desktop flex items-center justify-between gap-space-lg">
+        {/* Left Section */}
+        <div className="flex items-center gap-space-md min-w-0">
           <button
             type="button"
             onClick={onOpenMobile}
-            className="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            title="Mở menu"
+            className="md:hidden p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors"
+            aria-label="Mở menu điều hướng"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <span className="material-symbols-outlined text-[20px]">menu</span>
           </button>
 
-          {/* Breadcrumb nav */}
-          <nav className="flex items-center text-xs sm:text-sm font-medium text-slate-500 overflow-hidden text-ellipsis whitespace-nowrap">
-            <span className="text-slate-400 hidden sm:inline">Phân hệ HR</span>
-            {breadcrumbs.map((crumb, idx) => (
-              <React.Fragment key={idx}>
-                <span className="mx-2 text-slate-300">/</span>
-                {idx === breadcrumbs.length - 1 ? (
-                  <span className="text-slate-900 font-semibold truncate">{crumb.label}</span>
-                ) : (
-                  <Link href={crumb.href} className="hover:text-blue-600 transition-colors truncate">
-                    {crumb.label}
-                  </Link>
-                )}
-              </React.Fragment>
-            ))}
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold text-sm shadow-sm flex-shrink-0">
+            TP
+          </div>
+
+          <span className="font-headline-lg text-headline-lg text-primary font-bold tracking-tight whitespace-nowrap">
+            TalentPulse AI
+          </span>
+
+          <div className="h-4 w-[1px] bg-outline-variant/60 mx-1 hidden sm:block" />
+
+          <nav className="hidden md:flex items-center gap-space-md text-on-surface-variant font-body-sm-medium text-body-sm-medium">
+            <Link
+              href="/hr/applications"
+              className={`transition-colors ${
+                pathname === '/dashboard' || pathname === '/hr'
+                  ? 'text-primary font-semibold'
+                  : 'hover:text-on-surface'
+              }`}
+            >
+              Tổng quan
+            </Link>
+            <Link
+              href="/hr/applications"
+              aria-current={pathname.startsWith('/hr/applications') ? 'page' : undefined}
+              className={`transition-colors ${
+                pathname.startsWith('/hr/applications')
+                  ? 'text-primary font-semibold'
+                  : 'hover:text-on-surface'
+              }`}
+            >
+              Hồ sơ
+            </Link>
+            <Link
+              href="/dashboard/jobs"
+              className={`transition-colors ${
+                pathname.startsWith('/dashboard/jobs')
+                  ? 'text-primary font-semibold'
+                  : 'hover:text-on-surface'
+              }`}
+            >
+              Vị trí
+            </Link>
+            <Link
+              href="/hr/interviews"
+              className={`transition-colors ${
+                pathname.startsWith('/hr/interviews')
+                  ? 'text-primary font-semibold'
+                  : 'hover:text-on-surface'
+              }`}
+            >
+              AI Sàng lọc
+            </Link>
           </nav>
         </div>
 
-        {/* Right: Primary action CTA, User Profile & Logout */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Quick Create Job Button */}
+        {/* Right Section */}
+        <div className="flex items-center gap-space-md">
+          <div className="relative hidden sm:block w-64 md:w-80">
+            <span className="material-symbols-outlined absolute left-3 top-2 text-[18px] text-outline pointer-events-none">
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Tìm ứng viên, kỹ năng, vị trí..."
+              className="w-full h-9 pl-9 pr-14 rounded-lg bg-surface-container-low border border-outline-variant/70 text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            />
+            <kbd className="absolute right-2.5 top-1.5 font-tabular-mono text-label-xs text-outline px-1.5 py-0.5 rounded bg-surface-container-lowest border border-outline-variant">
+              ⌘K
+            </kbd>
+          </div>
+
           <Link
             href="/dashboard/jobs/create"
-            className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-xs"
+            className="inline-flex items-center gap-1.5 h-9 px-space-md rounded-lg bg-primary hover:bg-primary-container text-on-primary font-body-sm-medium text-body-sm-medium transition-all shadow-sm flex-shrink-0"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <span className="material-symbols-outlined text-[18px]">add</span>
             <span>+ Tạo tin tuyển dụng</span>
           </Link>
 
-          {/* User info pill */}
-          <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-slate-200">
-            <div className="text-right">
-              <div className="text-xs font-semibold text-slate-900 leading-tight">
-                {userDisplayName}
-              </div>
-              <div className="text-[11px] text-slate-500 leading-tight">
-                {userRole === 'ADMIN' ? 'Quản trị viên' : 'Chuyên viên Tuyển dụng'}
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-bold text-xs flex items-center justify-center border border-blue-200">
-              {userDisplayName.charAt(0).toUpperCase()}
-            </div>
-          </div>
-
-          {/* Logout Button */}
           <button
+            aria-label="Thông báo hệ thống"
             type="button"
-            onClick={handleLogout}
-            title="Đăng xuất"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 text-xs sm:text-sm font-medium transition-colors"
+            className="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span className="hidden sm:inline">Đăng xuất</span>
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error" />
           </button>
+
+          <Link
+            href="/profile"
+            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 ring-1 ring-outline-variant/60 text-on-primary font-bold text-xs hover:opacity-90 transition-opacity"
+            title={userDisplayName}
+          >
+            {userInitials}
+          </Link>
         </div>
       </div>
     </header>
   );
 }
+
+export default HrHeader;

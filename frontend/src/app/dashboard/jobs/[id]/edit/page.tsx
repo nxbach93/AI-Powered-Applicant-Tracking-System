@@ -50,73 +50,67 @@ function EditJobContent() {
         success: false,
         error: res.error?.message || 'Không thể cập nhật tin tuyển dụng. Vui lòng kiểm tra lại.',
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi hệ thống khi cập nhật tin tuyển dụng.';
       return {
         success: false,
-        error: err.message || 'Lỗi hệ thống khi cập nhật tin tuyển dụng.',
+        error: msg,
       };
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/70 pb-20">
-      {/* Header thanh điều hướng */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center gap-2 text-xs font-medium text-slate-500">
-            <Link href="/dashboard/jobs" className="hover:text-blue-600 transition-colors">
-              Quản lý tuyển dụng
-            </Link>
-            <span>/</span>
-            <span className="text-slate-900 font-semibold truncate max-w-xs">
-              Chỉnh sửa: {job?.title || id}
-            </span>
-          </nav>
-        </div>
+    <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
+      {/* Breadcrumbs & Header */}
+      <div className="flex flex-col gap-1.5">
+        <nav className="flex items-center gap-2 text-xs font-medium text-slate-400">
+          <Link href="/dashboard/jobs" className="hover:text-blue-600 transition-colors">
+            Quản lý tin tuyển dụng
+          </Link>
+          <span>/</span>
+          <span className="text-slate-700 font-semibold truncate max-w-xs">
+            Chỉnh sửa: {job?.title || id}
+          </span>
+        </nav>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          Chỉnh sửa tin tuyển dụng
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500">
+          Cập nhật nội dung JD, yêu cầu kỹ năng và điều chỉnh mức lương hoặc trạng thái chiến dịch tuyển dụng.
+        </p>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Chỉnh sửa tin tuyển dụng
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Cập nhật nội dung mô tả, kỹ năng yêu cầu và điều chỉnh mức lương hoặc trạng thái tuyển dụng
-          </p>
+      {/* Trạng thái Đang tải dữ liệu */}
+      {isLoading && (
+        <div className="bg-white rounded-2xl p-12 border border-slate-200 text-center shadow-2xs">
+          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs text-slate-500 font-medium">Đang tải thông tin tin tuyển dụng...</p>
         </div>
+      )}
 
-        {/* Trạng thái Đang tải dữ liệu */}
-        {isLoading && (
-          <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center">
-            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs text-slate-500 font-medium">Đang tải thông tin tin tuyển dụng...</p>
+      {/* Trạng thái Lỗi không tìm thấy */}
+      {loadError && !isLoading && (
+        <div className="bg-white rounded-2xl p-8 border border-rose-200 text-center max-w-md mx-auto space-y-4 shadow-2xs">
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
-        )}
+          <h3 className="text-base font-bold text-slate-900">Không tìm thấy tin tuyển dụng</h3>
+          <p className="text-xs text-slate-600">{loadError}</p>
+          <Link
+            href="/dashboard/jobs"
+            className="inline-block px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-2xs transition-all"
+          >
+            Quay lại danh sách tin
+          </Link>
+        </div>
+      )}
 
-        {/* Trạng thái Lỗi không tìm thấy */}
-        {loadError && !isLoading && (
-          <div className="bg-white rounded-3xl p-8 border border-red-200 text-center max-w-md mx-auto space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h3 className="text-base font-bold text-slate-900">Không tìm thấy tin tuyển dụng</h3>
-            <p className="text-xs text-slate-600">{loadError}</p>
-            <Link
-              href="/dashboard/jobs"
-              className="inline-block px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all"
-            >
-              Quay lại danh sách
-            </Link>
-          </div>
-        )}
-
-        {/* Form Chỉnh sửa */}
-        {!isLoading && !loadError && job && (
-          <JobForm initialData={job} isEdit={true} onSubmit={handleUpdateJob} />
-        )}
-      </div>
+      {/* Form Chỉnh sửa */}
+      {!isLoading && !loadError && job && (
+        <JobForm initialData={job} isEdit={true} onSubmit={handleUpdateJob} />
+      )}
     </div>
   );
 }
@@ -125,8 +119,8 @@ export default function EditJobPage() {
   return (
     <React.Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50/70 p-12 text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <div className="p-12 text-center">
+          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-xs text-slate-500 font-medium">Đang tải...</p>
         </div>
       }

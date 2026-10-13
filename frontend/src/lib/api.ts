@@ -9,6 +9,7 @@ export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
+  meta?: any;
   error?: {
     code: string;
     message: string;

@@ -200,18 +200,20 @@ export class ApplicationController {
   /**
    * GET /api/applications/job/:jobId
    * HR xem danh sách ứng viên theo tin tuyển dụng
-   * Query: status, sortBy, order, minScore, page, limit
+   * Query: status, sortBy, order, minScore, minExp, scoreTier, page, limit
    */
   async getApplicationsByJob(req: Request, res: Response) {
     try {
       const jobId = req.params.jobId as string;
-      const { status, sortBy, order, minScore, page, limit, search, excludeStatuses } = req.query;
+      const { status, sortBy, order, minScore, minExp, scoreTier, page, limit, search, excludeStatuses } = req.query;
 
       const result = await applicationService.getApplicationsByJob(jobId, {
         status: status as string,
         sortBy: sortBy as string,
         order: order as string,
         minScore: minScore ? parseFloat(minScore as string) : undefined,
+        minExp: minExp ? parseInt(minExp as string, 10) : undefined,
+        scoreTier: scoreTier as string,
         page: page ? parseInt(page as string, 10) : 1,
         limit: limit ? parseInt(limit as string, 10) : 10,
         search: search as string,
@@ -266,6 +268,80 @@ export class ApplicationController {
       return res.status(200).json({
         success: true,
         message: 'Cập nhật trạng thái hồ sơ thành công',
+        data: result
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+
+  /**
+   * POST /api/applications/:id/rescreen
+   * HR kích hoạt đánh giá lại AI cho 1 hồ sơ
+   */
+  async rescreenApplication(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const result = await applicationService.rescreenApplication(id);
+      return res.status(200).json({
+        success: true,
+        message: 'Đã hoàn thành đánh giá lại AI cho hồ sơ',
+        data: result
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+
+  /**
+   * POST /api/applications/batch-rescreen
+   * HR sàng lọc AI hàng loạt cho danh sách hồ sơ được chọn
+   */
+  async batchRescreenApplications(req: Request, res: Response) {
+    try {
+      const { applicationIds } = req.body;
+      if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Trường applicationIds phải là mảng không rỗng'
+          }
+        });
+      }
+
+      const result = await applicationService.batchRescreenApplications(applicationIds);
+      return res.status(200).json({
+        success: true,
+        message: `Hoàn tất sàng lọc AI: ${result.successCount}/${result.total} thành công`,
+        data: result
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+
+  /**
+   * POST /api/applications/bulk-email
+   * HR gửi email hàng loạt tới các ứng viên được chọn
+   */
+  async bulkSendEmail(req: Request, res: Response) {
+    try {
+      const { applicationIds, subject, message } = req.body;
+      if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Trường applicationIds phải là mảng không rỗng'
+          }
+        });
+      }
+
+      const result = await applicationService.bulkSendEmail(applicationIds, subject, message);
+      return res.status(200).json({
+        success: true,
+        message: `Đã gửi email: ${result.sentCount}/${result.total} người nhận`,
         data: result
       });
     } catch (error) {

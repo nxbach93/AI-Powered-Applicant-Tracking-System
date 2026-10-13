@@ -274,6 +274,8 @@ export interface HrApplicationFilters {
   sortBy?: 'appliedAt' | 'aiMatchScore' | 'updatedAt';
   order?: 'asc' | 'desc';
   minScore?: number;
+  minExp?: number;
+  scoreTier?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -297,6 +299,8 @@ export async function getApplicationsByJobApi(
   if (filters.sortBy) query.append('sortBy', filters.sortBy);
   if (filters.order) query.append('order', filters.order);
   if (filters.minScore !== undefined) query.append('minScore', String(filters.minScore));
+  if (filters.minExp !== undefined) query.append('minExp', String(filters.minExp));
+  if (filters.scoreTier) query.append('scoreTier', filters.scoreTier);
   if (filters.page) query.append('page', String(filters.page));
   if (filters.limit) query.append('limit', String(filters.limit));
   if (filters.search) query.append('search', filters.search);
@@ -340,6 +344,58 @@ export async function updateApplicationStatusApi(
   );
   if (!res.success || !res.data) {
     throw new Error(res.error?.message || 'Cập nhật trạng thái thất bại');
+  }
+  return res.data;
+}
+
+export async function rescreenApplicationApi(applicationId: string): Promise<{
+  applicationId: string;
+  aiMatchScore: number | null;
+  parsedSkills: string[] | null;
+  aiAnalysisSummary: string | null;
+  status: ApplicationStatus;
+}> {
+  const res = await apiRequest<any>(`/applications/${applicationId}/rescreen`, {
+    method: 'POST'
+  });
+  if (!res.success || !res.data) {
+    throw new Error(res.error?.message || 'Đánh giá lại AI thất bại');
+  }
+  return res.data;
+}
+
+export async function batchRescreenApplicationsApi(applicationIds: string[]): Promise<{
+  total: number;
+  successCount: number;
+  failedCount: number;
+  results: Array<{ id: string; success: boolean; score?: number | null; error?: string }>;
+}> {
+  const res = await apiRequest<any>('/applications/batch-rescreen', {
+    method: 'POST',
+    body: JSON.stringify({ applicationIds })
+  });
+  if (!res.success || !res.data) {
+    throw new Error(res.error?.message || 'Sàng lọc AI hàng loạt thất bại');
+  }
+  return res.data;
+}
+
+export async function bulkSendEmailApi(payload: {
+  applicationIds: string[];
+  subject: string;
+  message: string;
+}): Promise<{
+  total: number;
+  sentCount: number;
+  failedCount: number;
+  details: Array<{ id: string; email: string; success: boolean; error?: string }>;
+}> {
+  const res = await apiRequest<any>('/applications/bulk-email', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  if (!res.success || !res.data) {
+    throw new Error(res.error?.message || 'Gửi email hàng loạt thất bại');
   }
   return res.data;
 }

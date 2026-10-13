@@ -98,6 +98,22 @@ router.get(
   (req, res) => applicationController.getApplicationsByJob(req, res)
 );
 
+// POST /api/applications/batch-rescreen — HR sàng lọc AI hàng loạt cho danh sách hồ sơ
+router.post(
+  '/batch-rescreen',
+  authenticateJWT,
+  authorizeRoles(UserRole.HR, UserRole.ADMIN),
+  (req, res) => applicationController.batchRescreenApplications(req, res)
+);
+
+// POST /api/applications/bulk-email — HR gửi email hàng loạt tới ứng viên được chọn
+router.post(
+  '/bulk-email',
+  authenticateJWT,
+  authorizeRoles(UserRole.HR, UserRole.ADMIN),
+  (req, res) => applicationController.bulkSendEmail(req, res)
+);
+
 // GET /api/applications/:id/detail — HR xem chi tiết toàn bộ hồ sơ 1 ứng viên
 router.get(
   '/:id/detail',
@@ -112,6 +128,14 @@ router.patch(
   authenticateJWT,
   authorizeRoles(UserRole.HR, UserRole.ADMIN),
   (req, res) => applicationController.updateApplicationStatus(req, res)
+);
+
+// POST /api/applications/:id/rescreen — HR đánh giá lại AI cho 1 hồ sơ
+router.post(
+  '/:id/rescreen',
+  authenticateJWT,
+  authorizeRoles(UserRole.HR, UserRole.ADMIN),
+  (req, res) => applicationController.rescreenApplication(req, res)
 );
 
 export default router;

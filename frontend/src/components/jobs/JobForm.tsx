@@ -107,8 +107,9 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
       if (!res.success) {
         setSubmitError(res.error || 'Đã xảy ra lỗi khi lưu thông tin tuyển dụng');
       }
-    } catch (err: any) {
-      setSubmitError(err.message || 'Lỗi kết nối khi gửi dữ liệu');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi kết nối khi gửi dữ liệu';
+      setSubmitError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -125,12 +126,12 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-6 w-full">
       {/* Banner lỗi chung từ server nếu có */}
       {submitError && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-3">
-          <svg className="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-start gap-3 shadow-2xs">
+          <svg className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
             <strong className="font-semibold block mb-0.5">Không thể lưu tin tuyển dụng</strong>
@@ -139,40 +140,48 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
         </div>
       )}
 
-      {/* KHỐI 1: THÔNG TIN CƠ BẢN */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-900">1. Thông tin vị trí tuyển dụng</h2>
-          <p className="text-xs text-slate-500 mt-1">Các thông tin cơ bản giúp ứng viên tìm kiếm và nhận diện công việc</p>
+      {/* KHỐI 1: THÔNG TIN CƠ BẢN VỊ TRÍ */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-5">
+        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">1. Thông tin vị trí tuyển dụng</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Các thông tin cơ bản giúp ứng viên và hệ thống nhận diện vị trí công việc</p>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+            Cơ bản
+          </span>
         </div>
 
         {/* Tiêu đề vị trí */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-2">
-            Tiêu đề công việc <span className="text-red-500">*</span>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            Tiêu đề công việc <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, title: e.target.value });
+              if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
+            }}
             placeholder="Ví dụ: Senior Frontend Developer (React / Next.js)"
-            className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+            className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-all ${
               errors.title
-                ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
-                : 'border-slate-200 focus:ring-blue-500 bg-slate-50/40 focus:bg-white'
+                ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
+                : 'border-slate-300 focus:ring-blue-500 bg-slate-50/50 focus:bg-white'
             }`}
           />
-          {errors.title && <p className="text-xs text-red-600 mt-1.5">{errors.title}</p>}
+          {errors.title && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.title}</p>}
         </div>
 
         {/* 3 Cột: Phòng ban, Địa điểm, Hình thức */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Phòng ban</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Phòng ban</label>
             <select
               value={formData.department || ''}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/40 text-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50/50 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
             >
               <option value="Kỹ thuật Công nghệ">Kỹ thuật Công nghệ</option>
               <option value="Phát triển Phần mềm">Phát triển Phần mềm</option>
@@ -181,26 +190,27 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
               <option value="Marketing & Truyền thông">Marketing & Truyền thông</option>
               <option value="Nhân sự & Vận hành">Nhân sự & Vận hành</option>
               <option value="Kinh doanh">Kinh doanh</option>
+              <option value="Tài chính Kế toán">Tài chính Kế toán</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Địa điểm làm việc</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Địa điểm làm việc</label>
             <input
               type="text"
               value={formData.location || ''}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               placeholder="Ví dụ: Hà Nội / Hybrid"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/40 text-slate-900 text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50/50 text-slate-900 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Hình thức làm việc</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Hình thức làm việc</label>
             <select
               value={formData.employmentType || 'FULL_TIME'}
               onChange={(e) => setFormData({ ...formData, employmentType: e.target.value as EmploymentType })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/40 text-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50/50 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
             >
               <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
               <option value="PART_TIME">Bán thời gian (Part-time)</option>
@@ -212,73 +222,92 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
         </div>
       </div>
 
-      {/* KHỐI 2: MÔ TẢ & YÊU CẦU NĂNG LỰC (DÀNH CHO AI PARSER) */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="border-b border-slate-100 pb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">2. Bản mô tả & Yêu cầu công việc</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Nội dung chi tiết được mô hình AI NLP sử dụng để đối sánh kỹ năng và chấm điểm ứng viên
-              </p>
-            </div>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-              <span>Nạp vào AI Microservice</span>
-            </span>
+      {/* KHỐI 2: MÔ TẢ & YÊU CẦU NĂNG LỰC (ĐẦU VÀO CHO AI MATCHING) */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-5">
+        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">2. Bản mô tả & Yêu cầu năng lực (AI NLP Screening)</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Dữ liệu đầu vào quan trọng để AI Matching Engine phân tích kỹ năng, kinh nghiệm và chấm điểm CV
+            </p>
           </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <span>AI Input Engine</span>
+          </span>
         </div>
 
         {/* Mô tả chi tiết */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-2">
-            Mô tả trách nhiệm công việc <span className="text-red-500">*</span>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            Mô tả trách nhiệm công việc <span className="text-rose-500">*</span>
           </label>
           <textarea
-            rows={6}
+            rows={5}
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, description: e.target.value });
+              if (errors.description) setErrors((prev) => ({ ...prev, description: '' }));
+            }}
             placeholder="Nêu rõ các nhiệm vụ, trách nhiệm chính của vị trí tuyển dụng..."
-            className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+            className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-all ${
               errors.description
-                ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
-                : 'border-slate-200 focus:ring-blue-500 bg-slate-50/40 focus:bg-white'
+                ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
+                : 'border-slate-300 focus:ring-blue-500 bg-slate-50/50 focus:bg-white'
             }`}
           />
-          {errors.description && <p className="text-xs text-red-600 mt-1.5">{errors.description}</p>}
+          {errors.description && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.description}</p>}
         </div>
 
         {/* Yêu cầu năng lực & Kỹ năng */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-2">
-            Yêu cầu năng lực, kỹ năng & kinh nghiệm
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Yêu cầu năng lực, kỹ năng bắt buộc & số năm kinh nghiệm
+            </label>
+            <span className="text-[11px] text-indigo-600 font-medium">
+              ✨ Khuyên dùng định dạng gạch đầu dòng rõ ràng
+            </span>
+          </div>
           <textarea
-            rows={5}
+            rows={6}
             value={formData.requirements || ''}
             onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-            placeholder="Ví dụ: - Thành thạo React, Next.js, TypeScript
-- Có ít nhất 2 năm kinh nghiệm làm việc với REST API
-- Tinh thần trách nhiệm cao, kỹ năng làm việc nhóm tốt"
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/40 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            placeholder={`- Kỹ năng bắt buộc: React, Next.js, TypeScript, TailwindCSS
+- Kỹ năng nâng cao: RESTful API, State Management (Redux/Zustand), Git
+- Kinh nghiệm: Tối thiểu 2 - 3 năm kinh nghiệm lập trình Frontend
+- Học vấn: Tốt nghiệp Đại học/Cao đẳng chuyên ngành CNTT hoặc liên quan
+- Ngoại ngữ: Tiếng Anh đọc hiểu tài liệu kỹ thuật tốt (TOEIC 650+ hoặc tương đương)`}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50/50 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all font-mono"
           />
+          <div className="p-3 mt-2 rounded-xl bg-indigo-50/60 border border-indigo-100 text-[11px] text-indigo-900 flex items-start gap-2">
+            <span className="text-indigo-600 font-bold shrink-0">💡 Hướng dẫn:</span>
+            <span>
+              Mô hình AI sẽ trích xuất <strong>kỹ năng bắt buộc</strong>, <strong>số năm kinh nghiệm yêu cầu</strong>, <strong>trình độ học vấn</strong> và <strong>chứng chỉ ngoại ngữ</strong> từ phần nội dung này để đối sánh trực tiếp với CV ứng viên trong bảng <em>Criteria Comparison Pane</em>.
+            </span>
+          </div>
         </div>
       </div>
 
       {/* KHỐI 3: MỨC LƯƠNG & HẠN NỘP HỒ SƠ */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-900">3. Chế độ đãi ngộ & Thời hạn</h2>
-          <p className="text-xs text-slate-500 mt-1">Cài đặt khoảng lương và thời hạn đóng đợt nhận hồ sơ</p>
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-5">
+        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">3. Chế độ đãi ngộ & Thời hạn</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Khoảng lương dự kiến và thời hạn tiếp nhận hồ sơ</p>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Đãi ngộ
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Lương tối thiểu */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold text-slate-700">Lương tối thiểu (VNĐ)</label>
               {formatMoneyHint(formData.salaryMin) && (
-                <span className="text-xs font-bold text-emerald-600">{formatMoneyHint(formData.salaryMin)}</span>
+                <span className="text-xs font-bold text-emerald-600 font-tabular-mono">{formatMoneyHint(formData.salaryMin)}</span>
               )}
             </div>
             <input
@@ -286,28 +315,29 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
               min="0"
               step="500000"
               value={formData.salaryMin !== undefined && formData.salaryMin !== null ? formData.salaryMin : ''}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData({
                   ...formData,
                   salaryMin: e.target.value === '' ? undefined : Number(e.target.value),
-                })
-              }
+                });
+                if (errors.salaryMin) setErrors((prev) => ({ ...prev, salaryMin: '' }));
+              }}
               placeholder="Ví dụ: 15000000"
-              className={`w-full px-4 py-2.5 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-all ${
                 errors.salaryMin
-                  ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
-                  : 'border-slate-200 focus:ring-blue-500 bg-slate-50/40 focus:bg-white'
+                  ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
+                  : 'border-slate-300 focus:ring-blue-500 bg-slate-50/50 focus:bg-white'
               }`}
             />
-            {errors.salaryMin && <p className="text-xs text-red-600 mt-1.5">{errors.salaryMin}</p>}
+            {errors.salaryMin && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.salaryMin}</p>}
           </div>
 
           {/* Lương tối đa */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold text-slate-700">Lương tối đa (VNĐ)</label>
               {formatMoneyHint(formData.salaryMax) && (
-                <span className="text-xs font-bold text-emerald-600">{formatMoneyHint(formData.salaryMax)}</span>
+                <span className="text-xs font-bold text-emerald-600 font-tabular-mono">{formatMoneyHint(formData.salaryMax)}</span>
               )}
             </div>
             <input
@@ -315,53 +345,57 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
               min="0"
               step="500000"
               value={formData.salaryMax !== undefined && formData.salaryMax !== null ? formData.salaryMax : ''}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData({
                   ...formData,
                   salaryMax: e.target.value === '' ? undefined : Number(e.target.value),
-                })
-              }
+                });
+                if (errors.salaryMax) setErrors((prev) => ({ ...prev, salaryMax: '' }));
+              }}
               placeholder="Ví dụ: 30000000"
-              className={`w-full px-4 py-2.5 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-all ${
                 errors.salaryMax
-                  ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
-                  : 'border-slate-200 focus:ring-blue-500 bg-slate-50/40 focus:bg-white'
+                  ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
+                  : 'border-slate-300 focus:ring-blue-500 bg-slate-50/50 focus:bg-white'
               }`}
             />
-            {errors.salaryMax && <p className="text-xs text-red-600 mt-1.5">{errors.salaryMax}</p>}
+            {errors.salaryMax && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.salaryMax}</p>}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           {/* Hạn chót nộp hồ sơ */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Hạn chót nhận hồ sơ</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Hạn chót nhận hồ sơ</label>
             <input
               type="date"
               value={formData.applicationDeadline || ''}
-              onChange={(e) => setFormData({ ...formData, applicationDeadline: e.target.value })}
-              className={`w-full px-4 py-2.5 rounded-xl border text-sm text-slate-900 focus:outline-none focus:ring-2 transition-all ${
+              onChange={(e) => {
+                setFormData({ ...formData, applicationDeadline: e.target.value });
+                if (errors.applicationDeadline) setErrors((prev) => ({ ...prev, applicationDeadline: '' }));
+              }}
+              className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-1 transition-all ${
                 errors.applicationDeadline
-                  ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
-                  : 'border-slate-200 focus:ring-blue-500 bg-slate-50/40 focus:bg-white'
+                  ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
+                  : 'border-slate-300 focus:ring-blue-500 bg-slate-50/50 focus:bg-white'
               }`}
             />
             {errors.applicationDeadline && (
-              <p className="text-xs text-red-600 mt-1.5">{errors.applicationDeadline}</p>
+              <p className="text-xs text-rose-600 mt-1 font-medium">{errors.applicationDeadline}</p>
             )}
           </div>
 
           {/* Trạng thái xuất bản */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Trạng thái tin</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Trạng thái phát hành</label>
             <select
               value={formData.status || 'DRAFT'}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as JobStatus })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/40 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50/50 text-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
             >
               <option value="DRAFT">Bản nháp (DRAFT) - Chưa công khai</option>
               <option value="PUBLISHED">Xuất bản (PUBLISHED) - Đang nhận hồ sơ</option>
-              <option value="CLOSED">Đã đóng (CLOSED) - Ngừng nhận hồ sơ</option>
+              <option value="CLOSED">Đã đóng (CLOSED) - Tạm ngừng nhận CV</option>
               <option value="ARCHIVED">Lưu trữ (ARCHIVED) - Chiến dịch kết thúc</option>
             </select>
           </div>
@@ -369,10 +403,10 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
       </div>
 
       {/* THANH ĐIỀU KHIỂN NÚT HÀNH ĐỘNG */}
-      <div className="flex items-center justify-end gap-3 pt-4">
+      <div className="flex items-center justify-end gap-3 pt-2">
         <Link
           href="/dashboard/jobs"
-          className="px-6 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all"
+          className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
         >
           Hủy bỏ
         </Link>
@@ -380,7 +414,7 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-2xs transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {isSubmitting ? (
             <>
@@ -391,7 +425,7 @@ export function JobForm({ initialData, isEdit = false, onSubmit }: JobFormProps)
               <span>Đang lưu...</span>
             </>
           ) : (
-            <span>{isEdit ? 'Lưu thay đổi' : 'Đăng tin tuyển dụng'}</span>
+            <span>{isEdit ? 'Lưu thay đổi tin tuyển dụng' : 'Đăng tin tuyển dụng'}</span>
           )}
         </button>
       </div>

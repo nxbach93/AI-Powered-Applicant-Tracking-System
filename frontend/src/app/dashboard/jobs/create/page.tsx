@@ -21,42 +21,36 @@ export default function CreateJobPage() {
         success: false,
         error: res.error?.message || 'Không thể tạo tin tuyển dụng. Vui lòng kiểm tra lại thông tin.',
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi kết nối khi gửi dữ liệu tạo tin.';
       return {
         success: false,
-        error: err.message || 'Lỗi kết nối khi gửi dữ liệu tạo tin.',
+        error: msg,
       };
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/70 pb-20">
-      {/* Header thanh điều hướng */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center gap-2 text-xs font-medium text-slate-500">
-            <Link href="/dashboard/jobs" className="hover:text-blue-600 transition-colors">
-              Quản lý tuyển dụng
-            </Link>
-            <span>/</span>
-            <span className="text-slate-900 font-semibold">Tạo tin tuyển dụng mới</span>
-          </nav>
-        </div>
+    <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
+      {/* Breadcrumbs & Header */}
+      <div className="flex flex-col gap-1.5">
+        <nav className="flex items-center gap-2 text-xs font-medium text-slate-400">
+          <Link href="/dashboard/jobs" className="hover:text-blue-600 transition-colors">
+            Quản lý tin tuyển dụng
+          </Link>
+          <span>/</span>
+          <span className="text-slate-700 font-semibold">Tạo tin mới</span>
+        </nav>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          Tạo chiến dịch tuyển dụng mới
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500">
+          Điền đầy đủ bản mô tả công việc (JD), yêu cầu năng lực đầu vào cho mô hình AI CV Screening và chế độ đãi ngộ.
+        </p>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Tạo chiến dịch tuyển dụng mới
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Điền đầy đủ các thông tin mô tả công việc (JD), yêu cầu kỹ năng và chế độ đãi ngộ để bắt đầu tiếp nhận CV
-          </p>
-        </div>
-
-        {/* Form soạn thảo */}
-        <JobForm isEdit={false} onSubmit={handleCreateJob} />
-      </div>
+      {/* Form soạn thảo */}
+      <JobForm isEdit={false} onSubmit={handleCreateJob} />
     </div>
   );
 }

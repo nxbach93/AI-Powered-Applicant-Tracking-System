@@ -27,7 +27,7 @@ export function HrLayout({ children }: HrLayoutProps) {
 
   return (
     <RoleGuard allowedRoles={['HR', 'ADMIN']}>
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col">
+      <div className="bg-background font-body-base text-body-base text-on-surface antialiased min-h-screen">
         {/* Sidebar */}
         <HrSidebar
           isCollapsed={isCollapsed}
@@ -36,21 +36,19 @@ export function HrLayout({ children }: HrLayoutProps) {
           onCloseMobile={closeMobile}
         />
 
-        {/* Header */}
-        <HrHeader
-          isCollapsed={isCollapsed}
-          onOpenMobile={openMobile}
-        />
-
-        {/* Main Content Workspace Canvas */}
-        <main
-          className={`flex-1 pt-16 transition-all duration-200 ${
-            isCollapsed ? 'md:pl-[72px]' : 'md:pl-64'
-          } pl-0`}
-        >
-          {children}
-        </main>
+        {/* Content column matching <div class="pl-64"> in Stitch */}
+        <div className="pl-0 md:pl-64">
+          <HrHeader
+            isCollapsed={isCollapsed}
+            onOpenMobile={openMobile}
+          />
+          <main className="relative pt-16 w-full min-h-screen bg-surface-container-low/40 p-gutter-desktop">
+            {children}
+          </main>
+        </div>
       </div>
     </RoleGuard>
   );
 }
+
+export default HrLayout;
