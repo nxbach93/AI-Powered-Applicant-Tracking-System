@@ -162,7 +162,7 @@ export function HrDashboardView() {
         </div>
 
         {/* Toolbar Filters & CTAs */}
-        <div className="flex flex-wrap items-center gap-space-sm">
+        <div className="flex flex-wrap items-center gap-space-sm shrink-0">
           {/* Time Filter Dropdown */}
           <div className="relative">
             <button

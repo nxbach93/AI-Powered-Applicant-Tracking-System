@@ -94,8 +94,8 @@ export function HrHeader({ isCollapsed, onOpenMobile }: HrHeaderProps) {
         </div>
 
         {/* Right Section */}
-        <div className="flex items-center gap-space-md">
-          <div className="relative hidden sm:block w-64 md:w-80">
+        <div className="flex items-center gap-2 sm:gap-space-md shrink-0">
+          <div className="relative hidden lg:block w-44 xl:w-72">
             <span className="material-symbols-outlined absolute left-3 top-2 text-[18px] text-outline pointer-events-none">
               search
             </span>
@@ -111,10 +111,11 @@ export function HrHeader({ isCollapsed, onOpenMobile }: HrHeaderProps) {
 
           <Link
             href="/dashboard/jobs/create"
-            className="inline-flex items-center gap-1.5 h-9 px-space-md rounded-lg bg-primary hover:bg-primary-container text-on-primary font-body-sm-medium text-body-sm-medium transition-all shadow-sm flex-shrink-0"
+            className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-space-md rounded-lg bg-primary hover:bg-primary-container text-on-primary font-body-sm-medium text-body-sm-medium transition-all shadow-sm flex-shrink-0"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
-            <span>+ Tạo tin tuyển dụng</span>
+            <span className="hidden sm:inline">+ Tạo tin tuyển dụng</span>
+            <span className="sm:hidden">Tạo tin</span>
           </Link>
 
           <button

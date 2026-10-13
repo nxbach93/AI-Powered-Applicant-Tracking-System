@@ -42,7 +42,7 @@ export function HrLayout({ children }: HrLayoutProps) {
             isCollapsed={isCollapsed}
             onOpenMobile={openMobile}
           />
-          <main className="relative pt-16 w-full min-h-screen bg-surface-container-low/40 p-gutter-desktop">
+          <main className="relative pt-24 px-4 sm:px-6 md:px-gutter-desktop pb-gutter-desktop w-full min-h-screen bg-surface-container-low/40">
             {children}
           </main>
         </div>

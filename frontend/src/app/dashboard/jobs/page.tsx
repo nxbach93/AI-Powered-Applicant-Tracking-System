@@ -223,7 +223,7 @@ export default function HRJobsManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
           <Link
             href="/jobs"
             target="_blank"
