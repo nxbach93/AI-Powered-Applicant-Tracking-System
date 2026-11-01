@@ -13,10 +13,10 @@ if (!fs.existsSync(UPLOAD_BASE_DIR)) {
 
 // Cấu hình lưu trữ tệp trên ổ đĩa (DiskStorage)
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+  destination: (_req: any, _file: any, cb: any) => {
     cb(null, UPLOAD_BASE_DIR);
   },
-  filename: (req: Request, file, cb) => {
+  filename: (req: Request, file: any, cb: any) => {
     const userId = req.user?.id || 'anon';
     const timestamp = Date.now();
     const ext = path.extname(file.originalname).toLowerCase();
@@ -28,8 +28,8 @@ const storage = multer.diskStorage({
 // Bộ lọc định dạng tệp tin cho phép (.pdf, .docx)
 const fileFilter = (
   _req: Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  file: any,
+  cb: any
 ) => {
   const allowedExtensions = ['.pdf', '.docx'];
   const ext = path.extname(file.originalname).toLowerCase();
