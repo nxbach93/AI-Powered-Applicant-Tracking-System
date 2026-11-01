@@ -77,11 +77,12 @@ export async function apiRequest<T = unknown>(
     return data;
   } catch (error: unknown) {
     const errMessage = error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ Backend Core API';
+    console.error(`[API Network Error] URL target: ${url}`, error);
     return {
       success: false,
       error: {
         code: 'NETWORK_ERROR',
-        message: errMessage
+        message: `${errMessage} (Target URL: ${url})`
       }
     };
   }
