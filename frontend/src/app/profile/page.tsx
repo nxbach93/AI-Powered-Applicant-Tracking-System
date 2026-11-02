@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { RoleGuard } from '@/components/auth/role-guard';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, getStaticFileUrl } from '@/lib/api';
 import {
   getMyCvApi,
   uploadCvApi,
@@ -461,7 +461,7 @@ function ProfileContent() {
 
                     <div className="flex items-center gap-space-xs shrink-0 self-end sm:self-center">
                       <a
-                        href={`http://localhost:5000${cvInfo.cvFileUrl}`}
+                        href={getStaticFileUrl(cvInfo.cvFileUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="h-8 px-space-md rounded-lg bg-surface-container-lowest text-primary hover:bg-primary hover:text-on-primary transition-all font-body-sm-medium text-body-sm-medium border border-outline-variant/30 flex items-center gap-1 shadow-xs"
@@ -470,7 +470,7 @@ function ProfileContent() {
                         <span>Xem</span>
                       </a>
                       <a
-                        href={`http://localhost:5000${cvInfo.cvFileUrl}`}
+                        href={getStaticFileUrl(cvInfo.cvFileUrl)}
                         download
                         className="h-8 px-space-md rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all font-body-sm-medium text-body-sm-medium border border-outline-variant/30 flex items-center gap-1"
                       >

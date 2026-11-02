@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, getStaticFileUrl } from '@/lib/api';
 import { getMyApplicationsApi, getMyCvApi, ApplicationListItem, CvInfo } from '@/lib/application-api';
 
 interface JobItem {
@@ -358,7 +358,7 @@ export default function HomePage() {
             <div className="flex items-center gap-space-xs pt-space-xs">
               {cvInfo?.hasCv && cvInfo.cvFileUrl ? (
                 <a
-                  href={`http://localhost:5000${cvInfo.cvFileUrl}`}
+                  href={getStaticFileUrl(cvInfo.cvFileUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="flex-1 py-1 px-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold flex items-center justify-center gap-1 transition-colors"

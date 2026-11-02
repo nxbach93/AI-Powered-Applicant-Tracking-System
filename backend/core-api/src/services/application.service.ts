@@ -1,3 +1,14 @@
+
+export function getAiServiceBaseUrl(): string {
+  const envUrl = process.env.AI_SERVICE_URL?.trim();
+  if (!envUrl) {
+    return 'http://localhost:8000';
+  }
+  return envUrl
+    .replace(/\/+$/, '')
+    .replace(/\/api\/(v1|ai)$/, '');
+}
+
 import path from 'path';
 import fs from 'fs';
 import http from 'http';
@@ -744,7 +755,7 @@ export class ApplicationService {
     candidateProfile: { cvFileUrl: string | null },
     job: { title: string; description: string; requirements: string | null }
   ) {
-    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    const aiServiceBaseUrl = getAiServiceBaseUrl();
     const cvPath = candidateProfile.cvFileUrl
       ? path.join(process.cwd(), candidateProfile.cvFileUrl)
       : null;
@@ -756,97 +767,51 @@ export class ApplicationService {
 
     console.log(`[AI Hook] Kích hoạt phân tích AI ngầm cho application ${applicationId}...`);
 
-    const fileContent = fs.readFileSync(cvPath);
-    const boundary = `---ATS_BOUNDARY_${Date.now()}`;
-    const filename = path.basename(cvPath);
-    const ext = path.extname(filename).toLowerCase();
-    const mimeType = ext === '.pdf' ? 'application/pdf'
-      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    try {
+      const fileContent = fs.readFileSync(cvPath);
+      const filename = path.basename(cvPath);
+      const ext = path.extname(filename).toLowerCase();
+      const mimeType = ext === '.pdf' ? 'application/pdf'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-    // Xây dựng FormData thủ công theo chuẩn multipart/form-data
-    const parts: Buffer[] = [];
+      const formData = new FormData();
+      formData.append('jd_text', `${job.title}\n\n${job.description}\n\n${job.requirements || ''}`);
+      formData.append('skill_weight', '0.5');
+      formData.append('exp_weight', '0.3');
+      formData.append('semantic_weight', '0.2');
 
-    const addField = (name: string, value: string) => {
-      parts.push(Buffer.from(
-        `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`
-      ));
-    };
+      const fileBlob = new Blob([fileContent], { type: mimeType });
+      formData.append('cv_file', fileBlob, filename);
 
-    addField('jd_text', `${job.title}\n\n${job.description}\n\n${job.requirements || ''}`);
-    addField('skill_weight', '0.5');
-    addField('exp_weight', '0.3');
-    addField('semantic_weight', '0.2');
-
-    parts.push(Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="cv_file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`
-    ));
-    parts.push(fileContent);
-    parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
-
-    const body = Buffer.concat(parts);
-
-    // Gọi AI Service qua HTTP nội bộ với timeout 30 giây
-    await new Promise<void>((resolve) => {
-      const urlObj = new URL(`${aiServiceUrl}/api/v1/analyze-cv`);
-      const transport = urlObj.protocol === 'https:' ? https : http;
-
-      const timeout = setTimeout(() => {
-        console.warn(`[AI Hook] Timeout 30s cho application ${applicationId}, bỏ qua`);
-        req.destroy();
-        resolve();
-      }, 30000);
-
-      const req = transport.request(
-        {
-          hostname: urlObj.hostname,
-          port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-          path: urlObj.pathname,
-          method: 'POST',
-          headers: {
-            'Content-Type': `multipart/form-data; boundary=${boundary}`,
-            'Content-Length': body.length
-          }
-        },
-        async (res) => {
-          clearTimeout(timeout);
-          let rawData = '';
-          res.on('data', chunk => rawData += chunk);
-          res.on('end', async () => {
-            try {
-              const result = JSON.parse(rawData);
-              if (res.statusCode === 200) {
-                await prisma.application.update({
-                  where: { id: applicationId },
-                  data: {
-                    aiMatchScore: typeof result.match_score === 'number'
-                      ? Math.round(result.match_score * 100) / 100
-                      : null,
-                    parsedSkills: Array.isArray(result.parsed_skills) ? result.parsed_skills : undefined,
-                    aiAnalysisSummary: typeof result.summary === 'string' ? result.summary : undefined,
-                    status: ApplicationStatus.SCREENING
-                  }
-                });
-                console.log(`[AI Hook] Đã lưu kết quả AI cho application ${applicationId}: score=${result.match_score}`);
-              } else {
-                console.warn(`[AI Hook] AI Service trả HTTP ${res.statusCode} cho application ${applicationId}`);
-              }
-            } catch (parseErr) {
-              console.warn(`[AI Hook] Không parse được response AI cho application ${applicationId}`);
-            }
-            resolve();
-          });
-        }
-      );
-
-      req.on('error', (err) => {
-        clearTimeout(timeout);
-        console.warn(`[AI Hook] Lỗi kết nối AI Service cho application ${applicationId}:`, err.message);
-        resolve();
+      const response = await fetch(`${aiServiceBaseUrl}/api/v1/analyze-cv`, {
+        method: 'POST',
+        body: formData,
+        signal: AbortSignal.timeout(60000),
       });
 
-      req.write(body);
-      req.end();
-    });
+      if (!response.ok) {
+        console.warn(`[AI Hook] AI Service trả HTTP ${response.status} cho application ${applicationId}`);
+        return;
+      }
+
+      const result: any = await response.json();
+      if (result && result.success !== false) {
+        await prisma.application.update({
+          where: { id: applicationId },
+          data: {
+            aiMatchScore: typeof result.match_score === 'number'
+              ? Math.round(result.match_score * 100) / 100
+              : null,
+            parsedSkills: Array.isArray(result.parsed_skills) ? result.parsed_skills : undefined,
+            aiAnalysisSummary: typeof result.summary === 'string' ? result.summary : undefined,
+            status: ApplicationStatus.SCREENING
+          }
+        });
+        console.log(`[AI Hook] Đã lưu kết quả AI cho application ${applicationId}: score=${result.match_score}`);
+      }
+    } catch (err: any) {
+      console.warn(`[AI Hook] Lỗi kết nối AI Service cho application ${applicationId}:`, err?.message || err);
+    }
   }
 
   /**
@@ -882,7 +847,7 @@ export class ApplicationService {
       throw new AppError('Đơn ứng tuyển không tồn tại', 404, 'NOT_FOUND');
     }
 
-    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    const aiServiceBaseUrl = getAiServiceBaseUrl();
     const cvPath = app.candidateProfile.cvFileUrl
       ? path.join(process.cwd(), app.candidateProfile.cvFileUrl)
       : null;
@@ -894,78 +859,44 @@ export class ApplicationService {
     // Ưu tiên 1: Nếu tệp CV vật lý tồn tại trên đĩa, gửi sang /api/v1/analyze-cv (multipart)
     if (cvPath && fs.existsSync(cvPath)) {
       const fileContent = fs.readFileSync(cvPath);
-      const boundary = `---ATS_BOUNDARY_${Date.now()}`;
       const filename = path.basename(cvPath);
       const ext = path.extname(filename).toLowerCase();
       const mimeType = ext === '.pdf' ? 'application/pdf'
         : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-      const parts: Buffer[] = [];
-      const addField = (name: string, value: string) => {
-        parts.push(Buffer.from(
-          `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`
-        ));
-      };
+      const formData = new FormData();
+      formData.append('jd_text', `${app.jobPosting.title}\n\n${app.jobPosting.description}\n\n${app.jobPosting.requirements || ''}`);
+      formData.append('skill_weight', '0.5');
+      formData.append('exp_weight', '0.3');
+      formData.append('semantic_weight', '0.2');
 
-      addField('jd_text', `${app.jobPosting.title}\n\n${app.jobPosting.description}\n\n${app.jobPosting.requirements || ''}`);
-      addField('skill_weight', '0.5');
-      addField('exp_weight', '0.3');
-      addField('semantic_weight', '0.2');
+      const fileBlob = new Blob([fileContent], { type: mimeType });
+      formData.append('cv_file', fileBlob, filename);
 
-      parts.push(Buffer.from(
-        `--${boundary}\r\nContent-Disposition: form-data; name="cv_file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`
-      ));
-      parts.push(fileContent);
-      parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
-
-      const body = Buffer.concat(parts);
-
-      const aiResponse = await new Promise<any>((resolve, reject) => {
-        const urlObj = new URL(`${aiServiceUrl}/api/v1/analyze-cv`);
-        const transport = urlObj.protocol === 'https:' ? https : http;
-
-        const timeout = setTimeout(() => {
-          reject(new AppError('AI Service phản hồi quá thời gian quy định (Timeout 30s)', 504, 'AI_TIMEOUT'));
-        }, 30000);
-
-        const req = transport.request(
-          {
-            hostname: urlObj.hostname,
-            port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-            path: urlObj.pathname,
-            method: 'POST',
-            headers: {
-              'Content-Type': `multipart/form-data; boundary=${boundary}`,
-              'Content-Length': body.length
-            }
-          },
-          (res) => {
-            clearTimeout(timeout);
-            let rawData = '';
-            res.on('data', chunk => rawData += chunk);
-            res.on('end', () => {
-              try {
-                if (res.statusCode === 200) {
-                  resolve(JSON.parse(rawData));
-                } else {
-                  reject(new AppError(`AI Service trả về lỗi mã ${res.statusCode}`, 502, 'AI_SERVICE_ERROR'));
-                }
-              } catch (e) {
-                reject(new AppError('Không thể giải mã dữ liệu trả về từ AI Service', 502, 'AI_PARSE_ERROR'));
-              }
-            });
-          }
-        );
-
-        req.on('error', (err) => {
-          clearTimeout(timeout);
-          reject(new AppError(`Không thể kết nối tới AI Service: ${err.message}`, 503, 'AI_SERVICE_UNAVAILABLE'));
+      let response: Response;
+      try {
+        response = await fetch(`${aiServiceBaseUrl}/api/v1/analyze-cv`, {
+          method: 'POST',
+          body: formData,
+          signal: AbortSignal.timeout(60000),
         });
+      } catch (netErr: any) {
+        if (netErr.name === 'TimeoutError' || netErr.message?.includes('timeout')) {
+          throw new AppError('AI Service phản hồi quá thời gian quy định (Timeout 60s)', 504, 'AI_TIMEOUT');
+        }
+        throw new AppError(`Không thể kết nối tới AI Service: ${netErr.message || 'Mất kết nối'}`, 503, 'AI_SERVICE_UNAVAILABLE');
+      }
 
-        req.write(body);
-        req.end();
-      });
+      if (!response.ok) {
+        let errDetail = '';
+        try {
+          const errJson: any = await response.json();
+          errDetail = errJson?.error?.message || errJson?.detail || '';
+        } catch (_) {}
+        throw new AppError(`AI Service trả về lỗi mã ${response.status}${errDetail ? `: ${errDetail}` : ''}`, 502, 'AI_SERVICE_ERROR');
+      }
 
+      const aiResponse: any = await response.json();
       matchScore = typeof aiResponse.match_score === 'number' ? Math.round(aiResponse.match_score * 100) / 100 : null;
       parsedSkills = Array.isArray(aiResponse.parsed_skills) ? aiResponse.parsed_skills : [];
       summary = JSON.stringify({
@@ -983,7 +914,7 @@ export class ApplicationService {
         ? (app.parsedSkills as string[])
         : (Array.isArray(app.candidateProfile.parsedSkills) ? (app.candidateProfile.parsedSkills as string[]) : ['Communication', 'Teamwork']);
 
-      const payload = JSON.stringify({
+      const payload = {
         jd_data: {
           title: app.jobPosting.title,
           description: `${app.jobPosting.description}\n\n${app.jobPosting.requirements || ''}`,
@@ -1002,54 +933,33 @@ export class ApplicationService {
           exp_weight: 0.3,
           semantic_weight: 0.2
         }
-      });
+      };
 
-      const aiResponse = await new Promise<any>((resolve, reject) => {
-        const urlObj = new URL(`${aiServiceUrl}/api/v1/match-cv`);
-        const transport = urlObj.protocol === 'https:' ? https : http;
-
-        const timeout = setTimeout(() => {
-          reject(new AppError('AI Service phản hồi quá thời gian quy định (Timeout 30s)', 504, 'AI_TIMEOUT'));
-        }, 30000);
-
-        const req = transport.request(
-          {
-            hostname: urlObj.hostname,
-            port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-            path: urlObj.pathname,
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(payload)
-            }
-          },
-          (res) => {
-            clearTimeout(timeout);
-            let rawData = '';
-            res.on('data', chunk => rawData += chunk);
-            res.on('end', () => {
-              try {
-                if (res.statusCode === 200) {
-                  resolve(JSON.parse(rawData));
-                } else {
-                  reject(new AppError(`AI Service trả về lỗi mã ${res.statusCode}`, 502, 'AI_SERVICE_ERROR'));
-                }
-              } catch (e) {
-                reject(new AppError('Không thể giải mã dữ liệu JSON từ AI Service', 502, 'AI_PARSE_ERROR'));
-              }
-            });
-          }
-        );
-
-        req.on('error', (err) => {
-          clearTimeout(timeout);
-          reject(new AppError(`Không thể kết nối tới AI Service: ${err.message}`, 503, 'AI_SERVICE_UNAVAILABLE'));
+      let response: Response;
+      try {
+        response = await fetch(`${aiServiceBaseUrl}/api/v1/match-cv`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(60000),
         });
+      } catch (netErr: any) {
+        if (netErr.name === 'TimeoutError' || netErr.message?.includes('timeout')) {
+          throw new AppError('AI Service phản hồi quá thời gian quy định (Timeout 60s)', 504, 'AI_TIMEOUT');
+        }
+        throw new AppError(`Không thể kết nối tới AI Service: ${netErr.message || 'Mất kết nối'}`, 503, 'AI_SERVICE_UNAVAILABLE');
+      }
 
-        req.write(payload);
-        req.end();
-      });
+      if (!response.ok) {
+        let errDetail = '';
+        try {
+          const errJson: any = await response.json();
+          errDetail = errJson?.error?.message || errJson?.detail || '';
+        } catch (_) {}
+        throw new AppError(`AI Service trả về lỗi mã ${response.status}${errDetail ? `: ${errDetail}` : ''}`, 502, 'AI_SERVICE_ERROR');
+      }
 
+      const aiResponse: any = await response.json();
       matchScore = typeof aiResponse.match_score === 'number' ? Math.round(aiResponse.match_score * 100) / 100 : null;
       parsedSkills = Array.isArray(aiResponse.parsed_skills) ? aiResponse.parsed_skills : existingSkills;
       summary = JSON.stringify({
@@ -1063,7 +973,6 @@ export class ApplicationService {
       });
     }
 
-    // Cập nhật kết quả vào database
     const updated = await prisma.application.update({
       where: { id: applicationId },
       data: {
@@ -1320,7 +1229,38 @@ export class ApplicationService {
       }))
     };
   }
+
+  /**
+   * Kiểm tra cấu hình và trạng thái kết nối tới AI Service
+   */
+  async getAiServiceStatus() {
+    const baseUrl = getAiServiceBaseUrl();
+    const endpoint = `${baseUrl}/api/v1`;
+    let status: 'online' | 'offline' = 'offline';
+    let latencyMs: number | null = null;
+    const startTime = Date.now();
+
+    try {
+      const response = await fetch(`${baseUrl}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) {
+        status = 'online';
+        latencyMs = Date.now() - startTime;
+      }
+    } catch (_) {
+      status = 'offline';
+    }
+
+    return {
+      baseUrl,
+      endpoint,
+      status,
+      latencyMs,
+      environment: process.env.NODE_ENV || 'development'
+    };
+  }
 }
 
 export default new ApplicationService();
-

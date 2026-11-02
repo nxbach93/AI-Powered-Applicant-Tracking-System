@@ -1,5 +1,7 @@
 'use client';
 
+import { getStaticFileUrl } from '@/lib/api';
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
   SubmitApplicationPayload,
@@ -15,7 +17,6 @@ interface ApplyModalProps {
   onSuccess: (applicationId: string) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 const ACCEPTED_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -150,7 +151,7 @@ export function ApplyModal({ jobId, jobTitle, onClose, onSuccess }: ApplyModalPr
                   <p className="text-[10px] text-blue-600 mt-0.5">Sẽ dùng CV đang lưu trữ</p>
                 </div>
                 <a
-                  href={`${API_BASE}${cvInfo.cvFileUrl}`}
+                  href={getStaticFileUrl(cvInfo.cvFileUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-blue-600 hover:underline shrink-0"

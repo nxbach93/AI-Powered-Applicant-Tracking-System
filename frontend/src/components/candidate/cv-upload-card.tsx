@@ -1,5 +1,7 @@
 'use client';
 
+import { getStaticFileUrl } from '@/lib/api';
+
 import React, { useRef, useState } from 'react';
 import { CvInfo, uploadCvApi, deleteCvApi } from '@/lib/application-api';
 
@@ -9,7 +11,6 @@ interface CvUploadCardProps {
   onDeleteSuccess: () => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
 export function CvUploadCard({ cvInfo, onUploadSuccess, onDeleteSuccess }: CvUploadCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,7 +138,7 @@ export function CvUploadCard({ cvInfo, onUploadSuccess, onDeleteSuccess }: CvUpl
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <a
-                href={`${API_BASE}${cvInfo.cvFileUrl}`}
+                href={getStaticFileUrl(cvInfo.cvFileUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-blue-700 bg-white hover:bg-blue-100 border border-blue-200 transition-colors"

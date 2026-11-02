@@ -1,5 +1,7 @@
 'use client';
 
+import { getStaticFileUrl } from '@/lib/api';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -7,7 +9,6 @@ import { RoleGuard } from '@/components/auth/role-guard';
 import { ApplicationStatusBadge } from '@/components/candidate/application-status-badge';
 import { getMyApplicationByIdApi, withdrawApplicationApi, ApplicationDetail } from '@/lib/application-api';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 const WITHDRAWABLE = new Set(['SUBMITTED', 'SCREENING']);
 
 function formatDate(iso: string, withTime = false) {
@@ -203,7 +204,7 @@ function PageContent({ id }: { id: string }) {
       {app.cvFileUrl && (
         <Section title="CV đính kèm">
           <a
-            href={`${API_BASE}${app.cvFileUrl}`}
+            href={getStaticFileUrl(app.cvFileUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2.5 px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors"

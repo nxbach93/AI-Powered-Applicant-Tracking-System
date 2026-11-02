@@ -365,6 +365,22 @@ export class ApplicationController {
       return handleError(res, error);
     }
   }
+
+  /**
+   * GET /api/applications/ai-status
+   * HR kiểm tra cấu hình và trạng thái kết nối tới AI Service
+   */
+  async getAiStatus(req: Request, res: Response) {
+    try {
+      const data = await applicationService.getAiServiceStatus();
+      return res.status(200).json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
 }
 
 export default new ApplicationController();

@@ -34,6 +34,15 @@ function HrSettingsContent() {
   const [aiSettings, setAiSettings] = useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [isAiSaved, setIsAiSaved] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [aiTelemetry, setAiTelemetry] = useState<{
+    endpoint: string;
+    status: 'online' | 'offline';
+    latencyMs: number | null;
+  }>({
+    endpoint: 'Đang kiểm tra kết nối...',
+    status: 'offline',
+    latencyMs: null,
+  });
 
   // HR Account Form State
   const [profileData, setProfileData] = useState({
@@ -69,6 +78,39 @@ function HrSettingsContent() {
       setActiveTab('ai');
     }
   }, [searchParams]);
+
+  // Load AI Microservice status and connected endpoint
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchAiStatus() {
+      try {
+        const res = await apiRequest<{
+          endpoint: string;
+          status: 'online' | 'offline';
+          latencyMs: number | null;
+        }>('/applications/ai-status');
+        if (isMounted && res?.data) {
+          setAiTelemetry({
+            endpoint: res.data.endpoint || 'http://localhost:8000/api/v1',
+            status: res.data.status,
+            latencyMs: res.data.latencyMs,
+          });
+        }
+      } catch (err) {
+        if (isMounted) {
+          setAiTelemetry({
+            endpoint: 'http://localhost:8000/api/v1',
+            status: 'offline',
+            latencyMs: null,
+          });
+        }
+      }
+    }
+    fetchAiStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Load saved AI Settings from localStorage
   useEffect(() => {
@@ -471,10 +513,17 @@ function HrSettingsContent() {
                   <p className="font-label-xs text-label-xs text-outline">Môi trường AI microservice đang hoạt động</p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-xs text-label-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
-                Dịch vụ AI Sẵn sàng
-              </span>
+              {aiTelemetry.status === 'online' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-label-xs text-label-xs font-semibold border border-emerald-300/40">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Dịch vụ AI Sẵn sàng {aiTelemetry.latencyMs !== null ? `(${aiTelemetry.latencyMs}ms)` : ''}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-label-xs text-label-xs font-semibold border border-rose-300/40">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  Chưa kết nối AI Service
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-body-sm pt-1">
@@ -488,7 +537,7 @@ function HrSettingsContent() {
               </div>
               <div className="p-3 rounded-lg bg-surface-container-low">
                 <span className="font-label-xs text-label-xs text-outline block">Endpoint Kết nối:</span>
-                <strong className="text-on-surface font-tabular-mono">http://localhost:8000/api/v1</strong>
+                <strong className="text-on-surface font-tabular-mono break-all">{aiTelemetry.endpoint}</strong>
               </div>
             </div>
           </div>

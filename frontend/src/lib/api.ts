@@ -48,6 +48,22 @@ export function getCurrentUser<T = Record<string, unknown>>(): T | null {
   }
 }
 
+/**
+ * Chuyển đổi đường dẫn tương đối của tệp tĩnh (ví dụ: /uploads/cv/...)
+ * thành URL đầy đủ trỏ vào Backend (hoạt động đồng nhất trên cả Local và Production).
+ */
+export function getStaticFileUrl(filePath: string | null | undefined): string {
+  if (!filePath) return '#';
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+    return filePath;
+  }
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  // Bỏ /api hoặc /api/ ở cuối để lấy backend base URL
+  const backendBase = apiUrl.replace(/\/api\/?$/, '');
+  const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  return `${backendBase}${cleanPath}`;
+}
+
 export async function apiRequest<T = unknown>(
   endpoint: string,
   options: RequestInit = {}

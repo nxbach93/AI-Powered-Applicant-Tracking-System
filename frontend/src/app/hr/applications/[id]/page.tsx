@@ -1,5 +1,7 @@
 'use client';
 
+import { getStaticFileUrl } from '@/lib/api';
+
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -10,7 +12,6 @@ import {
   updateApplicationStatusApi,
 } from '@/lib/application-api';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
 function formatDate(iso: string) {
   try {
@@ -142,11 +143,7 @@ export default function HrApplicationDetailPage() {
     : 'UV';
 
   // PDF URL resolving
-  const pdfUrl = detail?.cvFileUrl
-    ? detail.cvFileUrl.startsWith('http')
-      ? detail.cvFileUrl
-      : `${API_BASE}${detail.cvFileUrl}`
-    : null;
+  const pdfUrl = detail?.cvFileUrl ? getStaticFileUrl(detail.cvFileUrl) : null;
 
   if (isLoading) {
     return (

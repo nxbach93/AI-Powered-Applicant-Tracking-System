@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getStaticFileUrl } from '@/lib/api';
 import {
   getHrJobsOverviewApi,
   getApplicationsByJobApi,
@@ -549,7 +550,7 @@ function HrAiScreeningContent() {
                 {/* View / Download CV */}
                 {application.cvFileUrl ? (
                   <a
-                    href={application.cvFileUrl.startsWith('http') ? application.cvFileUrl : `http://localhost:5000${application.cvFileUrl}`}
+                    href={getStaticFileUrl(application.cvFileUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 h-10 px-space-md rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm-medium text-body-sm-medium transition-colors"

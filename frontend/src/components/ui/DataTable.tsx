@@ -1,12 +1,13 @@
 'use client';
 
+import { getStaticFileUrl } from '@/lib/api';
+
 import React from 'react';
 import Link from 'next/link';
 import { ApplicationStatus, HrApplicationItem } from '@/lib/application-api';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { AiMatchGauge } from '@/components/ui/AiMatchGauge';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
 function formatDate(iso: string) {
   try {
@@ -272,7 +273,7 @@ export function DataTable({
                         {/* CV PDF Link */}
                         {app.cvFileUrl && (
                           <a
-                            href={`${API_BASE}${app.cvFileUrl}`}
+                            href={getStaticFileUrl(app.cvFileUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200/80"
