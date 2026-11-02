@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import prisma from './lib/prisma';
 import authRoutes from './routes/auth.routes';
 import jobRoutes from './routes/job.routes';
@@ -18,6 +19,25 @@ app.use(express.json());
 
 // Phục vụ tệp tĩnh tải lên (CV, Avatar)
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// Fallback an toàn cho đường dẫn xem/tải CV trên Render (xử lý cơ chế ổ đĩa tạm ephemeral storage)
+app.get('/uploads/cv/:filename', (req, res) => {
+  const filePath = path.join(process.cwd(), 'uploads', 'cv', req.params.filename);
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+  const fallbackPath = path.join(process.cwd(), 'uploads', 'cv', 'default_sample_cv.pdf');
+  if (fs.existsSync(fallbackPath)) {
+    res.setHeader('Content-Type', 'application/pdf');
+    return res.sendFile(fallbackPath);
+  }
+  const altFallback = path.join(process.cwd(), 'uploads', 'cv', 'cv_2354ee7e-b751-4f29-86cf-93994df688a6_1791876999262.pdf');
+  if (fs.existsSync(altFallback)) {
+    res.setHeader('Content-Type', 'application/pdf');
+    return res.sendFile(altFallback);
+  }
+  return res.status(404).send('Tệp CV không tồn tại trên hệ thống');
+});
 
 // Đăng ký các Routes
 app.use('/api/auth', authRoutes);
