@@ -64,10 +64,9 @@ router.get(
 
 // GET /api/applications/ai-status — Kiểm tra cấu hình và kết nối AI Service (HR/ADMIN)
 // Phải đặt TRƯỚC route GET /:id để tránh xung đột pattern
+// GET /api/applications/ai-status — Public AI Health & Endpoint Telemetry
 router.get(
   '/ai-status',
-  authenticateJWT,
-  authorizeRoles(UserRole.HR, UserRole.ADMIN),
   (req, res) => applicationController.getAiStatus(req, res)
 );
 

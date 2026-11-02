@@ -89,17 +89,25 @@ function HrSettingsContent() {
           status: 'online' | 'offline';
           latencyMs: number | null;
         }>('/applications/ai-status');
-        if (isMounted && res?.data) {
-          setAiTelemetry({
-            endpoint: res.data.endpoint || 'http://localhost:8000/api/v1',
-            status: res.data.status,
-            latencyMs: res.data.latencyMs,
-          });
+        if (isMounted) {
+          if (res?.success && res.data) {
+            setAiTelemetry({
+              endpoint: res.data.endpoint || 'https://ats-ai-service-o7xr.onrender.com/api/v1',
+              status: res.data.status,
+              latencyMs: res.data.latencyMs,
+            });
+          } else {
+            setAiTelemetry({
+              endpoint: 'https://ats-ai-service-o7xr.onrender.com/api/v1',
+              status: 'offline',
+              latencyMs: null,
+            });
+          }
         }
       } catch (err) {
         if (isMounted) {
           setAiTelemetry({
-            endpoint: 'http://localhost:8000/api/v1',
+            endpoint: 'https://ats-ai-service-o7xr.onrender.com/api/v1',
             status: 'offline',
             latencyMs: null,
           });

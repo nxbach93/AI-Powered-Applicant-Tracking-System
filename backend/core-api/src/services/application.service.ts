@@ -910,9 +910,23 @@ export class ApplicationService {
       });
     } else {
       // Ưu tiên 2: Phân tích qua endpoint JSON /api/v1/match-cv (khi không có tệp đĩa vật lý)
-      const existingSkills = Array.isArray(app.parsedSkills)
-        ? (app.parsedSkills as string[])
-        : (Array.isArray(app.candidateProfile.parsedSkills) ? (app.candidateProfile.parsedSkills as string[]) : ['Communication', 'Teamwork']);
+      let existingSkills: string[] = [];
+      try {
+        if (Array.isArray(app.parsedSkills)) {
+          existingSkills = app.parsedSkills as string[];
+        } else if (typeof app.parsedSkills === 'string') {
+          const parsed = JSON.parse(app.parsedSkills);
+          if (Array.isArray(parsed)) existingSkills = parsed;
+        } else if (Array.isArray(app.candidateProfile.parsedSkills)) {
+          existingSkills = app.candidateProfile.parsedSkills as string[];
+        } else if (typeof app.candidateProfile.parsedSkills === 'string') {
+          const parsed = JSON.parse(app.candidateProfile.parsedSkills);
+          if (Array.isArray(parsed)) existingSkills = parsed;
+        }
+      } catch (_) {}
+      if (existingSkills.length === 0) {
+        existingSkills = ['Communication', 'Teamwork'];
+      }
 
       const payload = {
         jd_data: {
@@ -1238,19 +1252,23 @@ export class ApplicationService {
     const endpoint = `${baseUrl}/api/v1`;
     let status: 'online' | 'offline' = 'offline';
     let latencyMs: number | null = null;
+    let errorDetail: string | null = null;
     const startTime = Date.now();
 
     try {
       const response = await fetch(`${baseUrl}/health`, {
         method: 'GET',
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(15000),
       });
       if (response.ok) {
         status = 'online';
         latencyMs = Date.now() - startTime;
+      } else {
+        errorDetail = `HTTP ${response.status}`;
       }
-    } catch (_) {
+    } catch (err: any) {
       status = 'offline';
+      errorDetail = err?.message || 'Connection failed';
     }
 
     return {
@@ -1258,6 +1276,8 @@ export class ApplicationService {
       endpoint,
       status,
       latencyMs,
+      errorDetail,
+      rawEnv: process.env.AI_SERVICE_URL || null,
       environment: process.env.NODE_ENV || 'development'
     };
   }
